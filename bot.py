@@ -1,15 +1,22 @@
 import discord
 from discord import app_commands
 
-from qb.db import load_raw_matches, to_idx, to_idx_key
-from qb.match import QueryMatch
+# leaving this commented in case I want to port this behaviour to v2
+#from qb.db import load_raw_matches, to_idx, to_idx_key
+#from qb.match import QueryMatch
 
 from klunk import sandbox
 
 
 MY_GUILD = discord.Object(id=1133544816563716250)  # replace with your guild id
-token=open('token.txt').read().strip()
+try:
+    token = open('token.txt').read().strip()
+except:
+    token = None
 
+
+# leaving this commented in case I want to port this behaviour to v2
+"""
 class QueryEngine:
     def __init__(self):
         import query 
@@ -73,6 +80,7 @@ class QueryEngine:
                 res += parse_result.execute(data)
 
         return res
+"""
 
 class QueryEngineV2:
     def __init__(self) -> None:
@@ -179,4 +187,5 @@ if __name__ == '__main__':
             except EOFError:
                 break
     else:
+        assert token is not None
         client.run(token)
