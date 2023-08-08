@@ -1,4 +1,7 @@
 from .language import *
+from .dataset import Dataset
+from .runtime import Runtime
+from .sandbox import Query
 
 import sys
 ARGS = set(sys.argv[1:])
@@ -166,9 +169,9 @@ def test_query():
     # we don't want the debug output so, meh. We could test more
     # (like make sure the values are correct on return) but that
     # is way too much effort for pretty low gain.. meh, later..?
-    SandboxedQuery(q("+test | info")).run()
-    SandboxedQuery(q("+test | index all | info")).run()
-    SandboxedQuery(q("+test | testlog 'Hello world!'")).run()
+    Query(q("+test | info")).run()
+    Query(q("+test | index all | info")).run()
+    Query(q("+test | testlog 'Hello world!'")).run()
 
 @Test
 def test_utils():
