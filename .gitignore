@@ -1,0 +1,7 @@
+# Normal Python ignores.
+.env/
+__pycache__/
+
+# Token and general configuration
+token.txt
+location.txt
