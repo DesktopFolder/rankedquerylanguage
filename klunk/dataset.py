@@ -1,6 +1,7 @@
 from .match import MatchMember, QueryMatch, from_json_string
 from .filters import *
 from typing import Any
+from .players import Player
 
 __datasets = None
 
@@ -59,8 +60,12 @@ def to_idx(s: str, l: list[QueryMatch], cs) -> list[QueryMatch]:
 def format_str(o: object):
     if type(o) == QueryMatch:
         return str(o)
+    if type(o) == tuple:
+        return ' '.join([str(v) for v in o])
     if type(o) == str:
         return o
+    if type(o) == Player:
+        return str(o)
     raise RuntimeError(f'Could not convert {type(o)} to formatted result.')
 
 class Dataset:
@@ -72,21 +77,24 @@ class Dataset:
         return Dataset(self.name, l)
 
     def info(self):
-        if type(self.l) == list:
+        if type(self.l) in [list, dict]:
             return f'Dataset {self.name}, currently with {len(self.l)} objects.'
         return f'Dataset containing {format_str(self.l)}'
 
     def summarize(self):
-        if type(self.l) == list:
-            length = len(self.l)
+        val = self.l
+        if type(val) == dict:
+            val = list(val.items())
+        if type(val) == list:
+            length = len(val)
             if length == 1:
-                return format_str(self.l[0])
-            res = '\n'.join([f'{i+1}. {format_str(v)}' for i, v in enumerate(self.l[0:10])])
+                return format_str(val[0])
+            res = '\n'.join([f'{i+1}. {format_str(v)}' for i, v in enumerate(val[0:10])])
             if length > 10:
                 res += f'\n... ({length - 10} values trimmed)'
             return res
-        if type(self.l) == str:
-            return self.l
+        if type(val) == str:
+            return val
 
 def AsDefaultDatalist(l: list[QueryMatch], current_season: int):
     return to_idx('ranked.current.nodecay', l, current_season)

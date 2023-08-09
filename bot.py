@@ -96,15 +96,15 @@ class QueryEngineV2:
             return s
         try:
             result = sb.run()
+            if sb._result is not None:
+                return format_result('\n'.join(sb._result))
+            return format_result(f'{result.summarize()}')
         except Exception as e:
             if sb._tracebacks:
                 import traceback
                 return format_result(f'{traceback.format_exc().rstrip()}')
             else:
                 return format_result(f'Error: {e}')
-        if sb._result is not None:
-            return format_result('\n'.join(sb._result))
-        return format_result(f'{result.summarize()}')
 
 
 # qe = QueryEngine()

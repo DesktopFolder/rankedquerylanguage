@@ -21,3 +21,7 @@ If you'd like to test out the language locally, you'll want:
 ## Language Specification
 
 There is none.
+
+## TODOs
+
+- | players vs | members should be using the same types (i.e. unify MatchMember and Player)

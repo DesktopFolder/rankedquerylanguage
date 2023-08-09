@@ -1,5 +1,5 @@
 from typing import Callable
-from .extra_types import Milliseconds
+from .extra_types import Milliseconds, UUID, Seconds
 from .utils import percentage_str, time_fmt
 from . import match
 
@@ -10,6 +10,22 @@ def stime_fmt(*args, **kwargs):
 
 def match_int_dict():
     return {1: 0, 2: 0, 3: 0, 4: 0}
+
+class ExtractFailure:
+    pass
+
+def _extract(t, k):
+    if not k.startswith('_') and hasattr(t, k):
+        return getattr(t, k)
+    return ExtractFailure
+
+def _lextract(tl, k):
+    if not tl:
+        return None
+    v0 = _extract(tl[0], k)
+    if v0 is ExtractFailure:
+        return None
+    return [_extract(tlv, k) for tlv in tl]
 
 
 class Player:
@@ -47,6 +63,9 @@ class Player:
 
     def __repr__(self):
         return f'<Player({self.nick}, {self.elo}>'
+
+    def extract(self, k):
+        return _extract(self, k)
 
     def completions(self, mode=2):
         return self.wins[mode] - self.ff_wins[mode]
@@ -98,20 +117,21 @@ class PlayerManager:
 
         for m in l:
             for member in m.members:
-                uuid = member['uuid']
+                assert type(member) == match.MatchMember
+                uuid = member.uuid
                 assert uuid is not None
                 if uuid not in self.players:
                     self.players[uuid] = Player(
-                        member['nickname'], uuid, m.date, member['elo_rate'])
+                        member.user, uuid, m.date, member.old_elo)
 
                 p = self.players[uuid]
 
                 if p.latest < m.date:
-                    p.nick = member['nickname']
-                    p.elo = member['elo_rate']
+                    p.nick = member.user
+                    p.elo = member.old_elo
 
                 if m.has_elos:
-                    p.history[m.date] = member['elo_after']
+                    p.history[m.date] = member.elo_after
                 else:
                     p.history_missing += 1
 

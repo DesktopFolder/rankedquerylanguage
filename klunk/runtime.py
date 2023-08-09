@@ -100,7 +100,7 @@ class Runtime(Component):
         @Local
         def localplayers(l: Dataset):
             # TODO. lol
-            return l.clone(PlayerManager(l.l, lambda x: True))
+            return l.clone(list(PlayerManager(l.l).players.values()))
 
         @Local
         def localhelp(_):
@@ -157,10 +157,15 @@ class Runtime(Component):
             else:
                 self.add_result(f'Dataset currently only has one item.')
 
+        def getslots(e: Any):
+            if hasattr(e, '__slots__'):
+                return e.__slots__
+            return [x for x in dir(e) if not x.startswith('_')]
+
         @Local
         def localattrs(l: Dataset):
             example = l.l[0]
-            self.add_result(f'Known accessible attributes of {type(example)}: ' + ", ".join(example.__slots__))
+            self.add_result(f'Known accessible attributes of {type(example)}: ' + ", ".join(getslots(example)))
 
         @Local
         def localexample(l: Dataset, attribute=None):
@@ -169,7 +174,7 @@ class Runtime(Component):
                 self.add_result(f'Example value of {attribute}: {example.extract(attribute)}')
             else:
                 d = dict()
-                for k in example.__slots__:
+                for k in getslots(example):
                     v = example.extract(attribute)
                     if type(v) != list:
                         d[k] = v
