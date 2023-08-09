@@ -37,3 +37,7 @@ def time_fmt(x: int|float, is_s=False):
     s = s % 60
     m = m % 60
     return f'{h}:{m:02}:{s:02}'
+
+def percentage_str(small, large):
+    pctg = round(100 * small / large, 2)
+    return f'{pctg}% ({small} / {large})'

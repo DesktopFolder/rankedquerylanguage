@@ -1,12 +1,12 @@
 from .extra_types import UUID, Milliseconds, Seconds
 from .match import QueryMatch
-from parse_utils import partition_list
+from .parse_utils import partition_list
 from .component import Component
 from .expression import Expression
 from .dataset import Dataset
 from typing import Callable, Any
 from . import commands
-from players import MatchPlayer, PlayerManager
+from .players import MatchPlayer, PlayerManager
 from .parse import parse_boolean
 from .utils import average, time_fmt
 # Later - this would be nice :)
