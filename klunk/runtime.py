@@ -175,7 +175,7 @@ class Runtime(Component):
             else:
                 d = dict()
                 for k in getslots(example):
-                    v = example.extract(attribute)
+                    v = example.extract(k)
                     if type(v) != list:
                         d[k] = v
                     else:
