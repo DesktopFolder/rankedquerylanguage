@@ -163,6 +163,21 @@ class Runtime(Component):
             self.add_result(f'Known accessible attributes of {type(example)}: ' + ", ".join(example.__slots__))
 
         @Local
+        def localexample(l: Dataset, attribute=None):
+            example = l.l[0]
+            if attribute is not None:
+                self.add_result(f'Example value of {attribute}: {example.extract(attribute)}')
+            else:
+                d = dict()
+                for k in example.__slots__:
+                    v = example.extract(attribute)
+                    if type(v) != list:
+                        d[k] = v
+                    else:
+                        d[k] = 'List[...]'
+                self.add_result(f'Example object layout: {d}')
+
+        @Local
         def localfilter(l: Dataset, *args):
             res: list[Any] = l.l
             for filt in args:

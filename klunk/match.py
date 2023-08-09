@@ -266,7 +266,9 @@ class QueryMatch:
             return self.is_ff
         if key == 'is_decay':
             return self.is_decay
-        raise KeyError(f'Match requires support for key {key}')
+        if key == 'winner':
+            return self.winner
+        raise KeyError(f'QueryMatch.__getitem__ requires support for key {key}')
 
     def is_realranked(self):
         return not self.is_decay and self.type == 2
