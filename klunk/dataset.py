@@ -123,7 +123,7 @@ def GetUserMappings(l: list[QueryMatch]):
             users[p.user.lower()] = p.uuid
             uuids[p.uuid] = p.user
     uuids['__draw'] = 'Drawn Match'
-    users['Drawn Match'] = '__draw'
+    users['drawn match'] = '__draw'
     return uuids, users
 
 def load_defaults(p: str, quiet = False):
