@@ -104,13 +104,29 @@ class Runtime(Component):
         @Local
         def localvars(_):
             """
-            vars - list the current dictionary of variables.
+            `vars` - list the current dictionary of variables.
             Because variables cannot be set yet, this is useless.
             """
             self.add_result(varlist)
 
         @Local
+        def localmetainfo(_):
+            self.add_result("""RankedQueryLanguage is a query system for MCSR matches & players developed by DesktopFolder.
+        It is currently in beta & is unlikely to leave that state any time soon.
+        The languages used are: Python, Python, and Python.
+        To see the codebase/readme/docs(lol), go to: <https://github.com/DesktopFolder/rankedquerylanguage>
+        """)
+
+        @Local
         def localindex(_, name: str):
+            """
+            `index(name)` - Load an index to operate off of. Examples:
+            default (the default index) - Current season, ranked, no decay.
+            all - All matches, ranked and unranked, including cheated/glitches ones.
+            most - All ranked matches ever, with many cheated/glitches ones removed. (no decay)
+
+            Usage example: `index all | filter completed | sort duration | take 5` - top 5 completions of all time.
+            """
             self.log(f"Changing dataset to {name}")
             if not name in self.datasets:
                 raise RuntimeError(f'{name} is not a valid dataset name.')
@@ -118,6 +134,11 @@ class Runtime(Component):
 
         @Local
         def localcommands(_):
+            """
+            `commands` - List valid commands.
+            A command is the first part of each section of a query.
+            For example, in `index default | filter winner(John) | sort`, default/filter/sort are commands.
+            """
             lcoms = set()
             for l in comlists:
                 for v in l.keys():
@@ -126,17 +147,23 @@ class Runtime(Component):
 
         @Local
         def localallfuncs(_):
+            """
+            `allfuncs` - Debugging command for listing all functions, including hidden ones.
+            """
             for i, comlist in enumerate(comlists):
                 self.add_result(f'Functions with priority {len(comlists)-i}:', ', '.join(comlist.keys()))
 
         @Local
         def localinfo(_):
+            """
+            `info` - Gets information on the current dataset being used.
+            """
             self.add_result(dataset.info())
 
         @Local
         def localwait(_, num_seconds):
             """
-            wait(num_seconds) - wait for some period of time.
+            `wait(num_seconds)` - wait for some period of time.
             This function is disabled for obvious reasons.
             Try harder.
             """
@@ -144,11 +171,18 @@ class Runtime(Component):
 
         @Local
         def localplayers(l: Dataset):
-            # TODO. lol
+            """
+            `players` - Converts the dataset from a match dataset to a player dataset.
+            This changes the datatype that commands operate over.
+            """
             return l.clone(list(PlayerManager(l.l).players.values()))
 
         @Local
         def localhelp(_, arg=None):
+            """
+            `help(command)` - If `command` is not given, prints general help.
+            Otherwise, prints help for `command` :)
+            """
             if arg is None:
                 self.add_result(get_help())
                 return
@@ -160,6 +194,9 @@ class Runtime(Component):
 
         @Local
         def localsort(d: Dataset, attribute, **kwargs):
+            """
+            `sort(attribute)` - Sorts the dataset based on `attribute`. To list attributes, see `help attrs`
+            """
             # For now this should do the trick.
             if not d.l:
                 return list()
@@ -168,11 +205,18 @@ class Runtime(Component):
 
         @Local
         def localrsort(l: Dataset, attribute):
+            """
+            `rsort(attribute)` - Reverse sorts the dataset based on `attribute`. To list attributes, `help attrs`
+            """
             # For now this should do the trick.
             return localsort(l, attribute, reverse=True)
 
         @Local
         def localtake(l: Dataset, *args):
+            """
+            `take(n)` - Reduce the size of the input data. Examples:
+            `take last 5` - Take the last 5 items. `take 3` - Take the first three items. For example, `rsort duration | take 5` gets the 5 slowest runs.
+            """
             data = l.l
             args = list(args)
             # ints, sa = partition_list(args, lambda a: type(a) is int)
@@ -192,6 +236,10 @@ class Runtime(Component):
 
         @Local
         def localaverage(l: Dataset, val, *args):
+            """
+            `average(attribute)` - Compute the average value of an attribute across a dataset.
+            Example: `filter completion | sort duration | take 1000 | average duration` gets the average time of the top 1000 completions.
+            """
             data = l.l
             if not data:
                 return self.add_result(f'Dataset was empty; no average calculable.')
@@ -207,6 +255,9 @@ class Runtime(Component):
 
         @Local
         def localcount(l: Dataset):
+            """
+            `count` - Returns the current dataset size.
+            """
             if type(l.l) is list:
                 self.add_result(f'Current size: {len(l.l)}')
             else:
@@ -214,6 +265,11 @@ class Runtime(Component):
 
         @Local
         def localextract(l: Dataset, val):
+            """
+            `extract(attribute)` - Extract the value of an attribute from all input objects.
+            For example, `| extract winner` gets a list that is JUST the names of all winners.
+            In programming terms, this turns [Match(winner=x,...), ...] into [x, ...]
+            """
             return [x.extract(val) for x in l.l]
 
         def getslots(e: Any):
@@ -223,11 +279,19 @@ class Runtime(Component):
 
         @Local
         def localattrs(l: Dataset):
+            """
+            `attrs` - List the attributes that are available for the current datatype.
+            e.g. `attrs` or `players | attrs` are the only cases where you'd want to use this currently.
+            """
             example = l.l[0]
             self.add_result(f'Known accessible attributes of {type(example)}: ' + ", ".join(getslots(example)))
 
         @Local
         def localexample(l: Dataset, attribute=None):
+            """
+            `example(attribute)` - If `attribute` is provided, provides an example value for that attribute. Otherwise,
+            provides a full example object layout.
+            """
             example = l.l[0]
             if attribute is not None:
                 self.add_result(f'Example value of {attribute}: {example.extract(attribute)}')
@@ -243,6 +307,13 @@ class Runtime(Component):
 
         @Local
         def localfilter(l: Dataset, *args):
+            """
+            `filter(...)` - Filters the input dataset based on 1 or more filter arguments.
+            Filter arguments may be simple functions where equality is desired, for example:
+            `filter winner(desktopfolder) loser(mcboyenn)`. For some binary attributes, you
+            may also use the simplified filter syntax: `filter noabnormal nodecay ff` is the
+            equivalent of `filter is_abnormal(false) is_decay(false) is_ff(true)`
+            """
             res: list[Any] = l.l
             for filt in args:
                 # Short circuit if we have no objects.
