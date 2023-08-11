@@ -3,6 +3,7 @@ from typing import Any, Callable
 from .parse import parse_boolean
 from .extra_types import *
 
+ABNORMAL_MATCH_MS=7*60*1000
 
 def type_str(t: int):
     return {1: 'Casual', 2: 'Ranked', 3: 'Private', 4: 'Event'}[t]
@@ -125,6 +126,7 @@ class QueryMatch:
                  'scored', # debug; has score_changes
                  'has_elos', # debug; has score_changes and it's good
                  'was_fixed', # debug; timelines used to fix duration
+                 'is_abnormal',
                  )
 
     @staticmethod
@@ -158,7 +160,7 @@ class QueryMatch:
         self.id: int = m['match_id'] # FILTER: Basic
         self.seed_type: str = m['seed_type'] # FILTER: Basic
         self.type: int = m['match_type'] # FILTER: Translation
-        self.winner: UUID = UUID(m['winner'])
+        self.winner: UUID = UUID(m['winner']) if m['winner'] is not None else UUID('__draw')
         self.members = UUIDList([MatchMember(mem) for mem in m['members']])
         self.duration: Milliseconds = Milliseconds(m['final_time'])
         self.is_ff = m['forfeit']
@@ -177,6 +179,14 @@ class QueryMatch:
             if s > self.duration:
                 self.was_fixed = True
                 self.duration = s
+        self.is_abnormal = False
+        # Checking for abnormal matches.
+        # Mainly, there are non-ff matches that have 0 duration.
+        if not self.is_ff and self.duration < ABNORMAL_MATCH_MS:
+            if self.winner != '__draw' and self.season < 2:
+                # I think cheating has been mostly fixed.
+                # I guess we'll see.
+                self.is_abnormal = True
 
         # Feature checks
         self.has_elos = self.scored

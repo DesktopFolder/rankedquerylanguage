@@ -30,6 +30,28 @@ Examples:
       - Uses the `count` command to output the resulting number of matches.
 """
 
+def SmartExtractor(ex, v):
+    # Creates and returns a smart extractor for ex
+    try:
+        ex.extract(v)
+        def getter(o):
+            return o.extract(v)
+        return getter
+    except: pass
+    try:
+        _ = ex[v]
+        def getter(o):
+            return o[v]
+        return getter
+    except: pass
+    try:
+        _ = ex[0]
+        def getter(o):
+            return o[int(v)]
+        return getter
+    except: pass
+    raise RuntimeError(f'Could not find a way to extract {v} from {type(ex)}. Try | attrs.')
+
 class Runtime(Component):
     def __init__(self, datasets: dict[str, Dataset], commands: dict[str, Callable]):
         super().__init__("Runtime")
@@ -107,9 +129,12 @@ class Runtime(Component):
             self.add_result(get_help())
 
         @Local
-        def localsort(l: Dataset, attribute, **kwargs):
+        def localsort(d: Dataset, attribute, **kwargs):
             # For now this should do the trick.
-            return sorted(l.l, key=lambda x: x.extract(attribute), **kwargs)
+            if not d.l:
+                return list()
+            extractor = SmartExtractor(d.l[0], attribute)
+            return sorted(d.l, key=lambda x: extractor(x), **kwargs)
 
         @Local
         def localrsort(l: Dataset, attribute):
@@ -156,6 +181,10 @@ class Runtime(Component):
                 self.add_result(f'Current size: {len(l.l)}')
             else:
                 self.add_result(f'Dataset currently only has one item.')
+
+        @Local
+        def localextract(l: Dataset, val):
+            return [x.extract(val) for x in l.l]
 
         def getslots(e: Any):
             if hasattr(e, '__slots__'):

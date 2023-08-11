@@ -1,3 +1,5 @@
+from klunk.extra_types import UUID, Milliseconds
+from klunk.utils import time_fmt
 from .match import MatchMember, QueryMatch, from_json_string
 from .filters import *
 from typing import Any
@@ -58,15 +60,23 @@ def to_idx(s: str, l: list[QueryMatch], cs) -> list[QueryMatch]:
     return l
 
 def format_str(o: object):
+    if o is None:
+        return '<None>'
     if type(o) == QueryMatch:
         return str(o)
     if type(o) == tuple:
-        return ' '.join([str(v) for v in o])
+        return ' '.join([format_str(v) for v in o])
     if type(o) == str:
         return o
     if type(o) == Player:
         return str(o)
-    raise RuntimeError(f'Could not convert {type(o)} to formatted result.')
+    if type(o) == UUID:
+        if __datasets is not None:
+            return __datasets['__uuids'].l[o]
+    if type(o) == Milliseconds:
+        return time_fmt(o)
+    return str(o)
+    # raise RuntimeError(f'Could not convert {type(o)} to formatted result.')
 
 class Dataset:
     def __init__(self, name: str, l):
@@ -107,6 +117,8 @@ def GetUserMappings(l: list[QueryMatch]):
             assert type(p) == MatchMember
             users[p.user.lower()] = p.uuid
             uuids[p.uuid] = p.user
+    uuids['__draw'] = 'Drawn Match'
+    users['Drawn Match'] = '__draw'
     return uuids, users
 
 def load_defaults(p: str, quiet = False):
