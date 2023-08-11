@@ -99,7 +99,7 @@ class QueryEngineV2:
             if sb._result is not None:
                 return format_result('\n'.join(sb._result))
             if self.formatter is not None:
-                return format_result(f'```{result.summarize()}```')
+                return format_result(f'```\n{result.summarize()}```')
             return format_result(f'{result.summarize()}')
         except Exception as e:
             if sb._tracebacks:
@@ -146,6 +146,7 @@ DiscordFormatter = {
     "underline": lambda s: f'__{s}__',
     "strike": lambda s: f'~{s}~',
     "doc": lambda s: '```\n' + ' '.join([x.strip() for x in s.split('\n') if x.strip() is not None]) + '\n```',
+    "username": lambda s: s.replace('_', '\\_')
 }
 
 

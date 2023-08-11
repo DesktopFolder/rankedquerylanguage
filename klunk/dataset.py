@@ -6,6 +6,7 @@ from typing import Any
 from .players import Player
 
 __datasets = None
+__discord = False
 
 
 def default_groups(dirname):
@@ -75,6 +76,8 @@ def format_str(o: object):
     if type(o) == UUID:
         if __datasets is not None:
             try:
+                if __discord:
+                    return __datasets['__uuids'].l[o].replace('_', '\\_')
                 return __datasets['__uuids'].l[o]
             except KeyError:
                 raise KeyError(f'{o} is not a valid username.')
@@ -129,7 +132,10 @@ def GetUserMappings(l: list[QueryMatch]):
     users['drawn match'] = '__draw'
     return uuids, users
 
-def load_defaults(p: str, quiet = False):
+def load_defaults(p: str, quiet = False, set_discord = False):
+    global __discord
+    if set_discord:
+        __discord = True
     global __datasets
     if __datasets is None:
         l = load_raw_matches(p, quiet)

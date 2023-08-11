@@ -38,7 +38,7 @@ class Query(Component):
             loc = "klunk/samples/"
 
         # Now construct the runtime, for which we need to load samples, etc.
-        datasets = load_defaults(loc, quiet = not self.debug)
+        datasets = load_defaults(loc, quiet = not self.debug, set_discord = self.formatter is not None)
         commands = dict()
         self.runtime = Runtime(datasets, commands, formatter=self.formatter)
 
