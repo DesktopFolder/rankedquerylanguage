@@ -48,8 +48,11 @@ class ExtractFailure:
     pass
 
 def _extract(t, k):
-    if not k.startswith('_') and hasattr(t, k):
-        return getattr(t, k)
+    if not k.startswith('_'):
+        if hasattr(t, k):
+            return getattr(t, k)
+        if hasattr(t, 'rql_' + k):
+            return getattr(t, 'rql_' + k)()
     return ExtractFailure
 
 def _lextract(tl, k):
@@ -182,11 +185,10 @@ class QueryMatch:
         self.is_abnormal = False
         # Checking for abnormal matches.
         # Mainly, there are non-ff matches that have 0 duration.
-        if not self.is_ff and self.duration < ABNORMAL_MATCH_MS:
-            if self.winner != '__draw' and self.season < 2:
-                # I think cheating has been mostly fixed.
-                # I guess we'll see.
-                self.is_abnormal = True
+        if self.rql_completed() and self.duration < ABNORMAL_MATCH_MS and self.season < 2:
+            # I think cheating has been mostly fixed.
+            # I guess we'll see.
+            self.is_abnormal = True
 
         # Feature checks
         self.has_elos = self.scored
@@ -201,6 +203,18 @@ class QueryMatch:
                 s.elo = p['score']
                 s.elo_after = p['score'] + p['change']
 
+    def rql_is_draw(self):
+        return self.winner == '__draw'
+
+    def rql_loser(self):
+        return self.get_other_member(self.winner)
+
+    def rql_completed(self):
+        return not self.rql_is_draw() and not self.is_ff
+
+    def rql_is_completed(self):
+        return not self.rql_is_draw() and not self.is_ff
+
     def extract(self, t: str):
         ex = _extract(self, t)
         if ex is ExtractFailure:
@@ -214,9 +228,9 @@ class QueryMatch:
         raise ValueError(f'Could not find uuid {uuid} in match ID {self.id}')
 
     def get_other_member(self, uuid):
-        assert uuid in [x['uuid'] for x in self.members]
+        # assert uuid in [x.uuid for x in self.members]
         for m in self.members:
-            if m['uuid'] != uuid:
+            if m.uuid != uuid:
                 return m
         raise ValueError(
             f'Could not find other uuid for {uuid} in match ID {self.id}')
@@ -233,8 +247,8 @@ class QueryMatch:
             return min(es)
         return None
 
-    def is_draw(self):
-        return self.winner is None
+    #def is_draw(self):
+    #    return self.winner is None
 
     def victor_elo(self):
         assert self.has_elos
