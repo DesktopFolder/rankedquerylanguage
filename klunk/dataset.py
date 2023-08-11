@@ -74,7 +74,10 @@ def format_str(o: object):
         return str(o)
     if type(o) == UUID:
         if __datasets is not None:
-            return __datasets['__uuids'].l[o]
+            try:
+                return __datasets['__uuids'].l[o]
+            except KeyError:
+                raise KeyError(f'{o} is not a valid username.')
     if type(o) == Milliseconds:
         return time_fmt(o)
     return str(o)

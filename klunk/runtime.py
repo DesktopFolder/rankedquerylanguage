@@ -269,7 +269,11 @@ class Runtime(Component):
                     if type(example) is bool:
                         desired = parse_boolean(desired)
                     elif type(example) is UUID:
-                        desired = self.datasets["__users"].l[desired.lower()]
+                        try:
+                            desired = self.datasets["__users"].l[desired.lower()]
+                        except KeyError:
+                            self.notes.append(f'{desired} is not a known username.')
+                            desired = None
                     elif type(example) is int:
                         desired = int(desired)
                     preres = len(res)
