@@ -3,7 +3,7 @@ from .runtime import Runtime
 from .dataset import load_defaults
 
 class Query(Component):
-    def __init__(self, query: str, debug = False, timing = False):
+    def __init__(self, query: str, debug = False, timing = False, formatter=None):
         super().__init__("SandboxedQuery")
         self.debug = debug
         self._timing = timing
@@ -11,6 +11,7 @@ class Query(Component):
         self.compiler = Compiler()
         self.tokenizer = Tokenizer()
         self.runtime = None
+        self.formatter = formatter
 
         self.tokens = None
         self.program = None
@@ -39,7 +40,7 @@ class Query(Component):
         # Now construct the runtime, for which we need to load samples, etc.
         datasets = load_defaults(loc, quiet = not self.debug)
         commands = dict()
-        self.runtime = Runtime(datasets, commands)
+        self.runtime = Runtime(datasets, commands, formatter=self.formatter)
 
         # Finally, get the result of program execution.
         self.result = self.runtime.execute(self.program, self.parameters)

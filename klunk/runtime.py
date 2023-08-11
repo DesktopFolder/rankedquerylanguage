@@ -53,16 +53,23 @@ def SmartExtractor(ex, v):
     raise RuntimeError(f'Could not find a way to extract {v} from {type(ex)}. Try | attrs.')
 
 class Runtime(Component):
-    def __init__(self, datasets: dict[str, Dataset], commands: dict[str, Callable]):
+    def __init__(self, datasets: dict[str, Dataset], commands: dict[str, Callable], formatter=None):
         super().__init__("Runtime")
 
         self.datasets = datasets
         self.commands = commands
+        self.formatter = formatter
         self.notes = list()
 
         alldatalen = len(self.datasets['all'].l) 
         if alldatalen < 50000:
             self.notes.append(f'Running with total dataset size {alldatalen} - likely in testing mode.')
+
+    def format(self, s, k):
+        ff = self.formatter
+        if ff is None or k not in ff:
+            return s
+        return ff[k](s)
 
     def execute(self, pipeline: list[Expression], parameters):
         # Okay, runtimes can actually be stateful.
@@ -79,6 +86,13 @@ class Runtime(Component):
         # Locals are the lowest priority, and are overwritten otherwise.
         # Is this correct? Idk whatever this is mostly useless segmentation.
         comlists = [self.commands, commands.basic_commands, localfunclist]
+
+        def lookup_command(name: str):
+            for comdict in comlists:
+                if name in comdict:
+                    return comdict[name]
+            return None
+
         # Now THIS is definitely not correct but whatever lol
         commands.logger = self
 
@@ -89,6 +103,10 @@ class Runtime(Component):
 
         @Local
         def localvars(_):
+            """
+            vars - list the current dictionary of variables.
+            Because variables cannot be set yet, this is useless.
+            """
             self.add_result(varlist)
 
         @Local
@@ -117,6 +135,11 @@ class Runtime(Component):
 
         @Local
         def localwait(_, num_seconds):
+            """
+            wait(num_seconds) - wait for some period of time.
+            This function is disabled for obvious reasons.
+            Try harder.
+            """
             pass
 
         @Local
@@ -125,8 +148,15 @@ class Runtime(Component):
             return l.clone(list(PlayerManager(l.l).players.values()))
 
         @Local
-        def localhelp(_):
-            self.add_result(get_help())
+        def localhelp(_, arg=None):
+            if arg is None:
+                self.add_result(get_help())
+                return
+            com = lookup_command(arg)
+            if com is None:
+                self.add_result(f'{self.format(arg, "tick")} is not a valid command.')
+                return
+            self.add_result(self.format(com.__doc__, 'doc'))
 
         @Local
         def localsort(d: Dataset, attribute, **kwargs):

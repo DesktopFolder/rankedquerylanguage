@@ -47,13 +47,15 @@ def load_raw_matches(dirname, quiet = False) -> list[QueryMatch]:
 def to_idx_key(s: str):
     return tuple(sorted([x.strip() for x in s.split('.') if x.strip()]))
 
-def to_idx(s: str, l: list[QueryMatch], cs) -> list[QueryMatch]:
+def to_idx(s: str, l: list[QueryMatch], cs=None) -> list[QueryMatch]:
     key = to_idx_key(s)
 
     if 'ranked' in key:
         l = [m for m in l if fRANKED(m)]
     if 'nodecay' in key:
         l = [m for m in l if not m.is_decay]
+    if 'noabnormal' in key:
+        l = [m for m in l if not m.is_abnormal]
     if 'current' in key:
         l = [m for m in l if m.season == cs]
 
@@ -109,6 +111,9 @@ class Dataset:
 def AsDefaultDatalist(l: list[QueryMatch], current_season: int):
     return to_idx('ranked.current.nodecay', l, current_season)
 
+def AsMostDatalist(l: list[QueryMatch], current_season: int):
+    return to_idx('ranked.nodecay.noabnormal', l)
+
 def GetUserMappings(l: list[QueryMatch]):
     uuids = {}
     users = {}
@@ -129,6 +134,7 @@ def load_defaults(p: str, quiet = False):
         __datasets = {
             "default": Dataset("Default", AsDefaultDatalist(l, l[-1].season)),
             "all": Dataset("All", l),
+            "most": Dataset("Most", AsMostDatalist(l)),
             "__uuids": Dataset("UUIDs", uuids),
             "__users": Dataset("Users", users),
         }

@@ -48,3 +48,11 @@ def _command_count_uniques(d: Dataset, val: str|None = None):
     if val is None:
         return Counter(d.l).get()
     raise RuntimeError('count_uniques does not support arguments yet.')
+
+@Command
+def _command_metainfo(_):
+    return """RankedQueryLanguage is a query system for MCSR matches & players developed by DesktopFolder.
+It is currently in beta & is unlikely to leave that state any time soon.
+The languages used are: Python, Python, and Python.
+To see the codebase/readme/docs(lol), go to: https://github.com/DesktopFolder/rankedquerylanguage
+"""

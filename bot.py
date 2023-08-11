@@ -84,10 +84,10 @@ class QueryEngine:
 
 class QueryEngineV2:
     def __init__(self) -> None:
-        pass
+        self.formatter = None
 
     def run(self, query: str, debug: bool=False, timing: bool=False, is_bot: bool=False):
-        sb = sandbox.Query(query, debug, timing)
+        sb = sandbox.Query(query, debug, timing, self.formatter)
 
         def format_result(s: str):
             if is_bot and sb.runtime and sb.runtime.notes:
@@ -98,6 +98,8 @@ class QueryEngineV2:
             result = sb.run()
             if sb._result is not None:
                 return format_result('\n'.join(sb._result))
+            if self.formatter is not None:
+                return format_result(f'```{result.summarize()}```')
             return format_result(f'{result.summarize()}')
         except Exception as e:
             if sb._tracebacks:
@@ -134,6 +136,17 @@ class MyClient(discord.Client):
 
 intents = discord.Intents.default()
 client = MyClient(intents=intents)
+
+
+DiscordFormatter = {
+    "tick": lambda s: f'`{s}`',
+    "ticks": lambda s: f'```\n{s}```',
+    "bold": lambda s: f'**{s}**',
+    "italics": lambda s: f'_{s}_',
+    "underline": lambda s: f'__{s}__',
+    "strike": lambda s: f'~{s}~',
+    "doc": lambda s: '```\n' + ' '.join([x.strip() for x in s.split('\n') if x.strip() is not None]) + '\n```',
+}
 
 
 @client.event
@@ -188,4 +201,5 @@ if __name__ == '__main__':
                 break
     else:
         assert token is not None
+        qe.formatter = DiscordFormatter
         client.run(token)
