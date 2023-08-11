@@ -111,7 +111,7 @@ class Dataset:
 def AsDefaultDatalist(l: list[QueryMatch], current_season: int):
     return to_idx('ranked.current.nodecay', l, current_season)
 
-def AsMostDatalist(l: list[QueryMatch], current_season: int):
+def AsMostDatalist(l: list[QueryMatch]):
     return to_idx('ranked.nodecay.noabnormal', l)
 
 def GetUserMappings(l: list[QueryMatch]):
