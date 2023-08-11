@@ -99,7 +99,8 @@ class QueryEngineV2:
             if sb._result is not None:
                 return format_result('\n'.join(sb._result))
             if self.formatter is not None:
-                return format_result(f'```\n{result.summarize()}```')
+                # TODO - maybe format discord here idk man
+                return format_result(f'{result.summarize()}')
             return format_result(f'{result.summarize()}')
         except Exception as e:
             if sb._tracebacks:
@@ -175,7 +176,7 @@ async def query(interaction: discord.Interaction, query: str):
     resp = qe.run(query, False, False, True)
     print('Bot finished running query:', query)
     try:
-        await interaction.response.send_message(f'From query: {query}:\n{resp}')
+        await interaction.response.send_message(f'From query: `{query}`:\n{resp}')
     except:
         print('Failed to send response to /query - likely it took too long.')
 
