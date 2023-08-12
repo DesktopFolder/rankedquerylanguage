@@ -250,7 +250,7 @@ class Runtime(Component):
             if not data:
                 return self.add_result(f'Dataset was empty; no average calculable.')
             example = data[0].extract(val)
-            if type(example) not in [int, Milliseconds, Seconds]:
+            if type(example) not in [int, Milliseconds, Seconds, float]:
                 return self.add_result(f'Could not average type {type(example)}.')
             result = average([x.extract(val) for x in data])
             if 'time' in args or type(example) in [Milliseconds, Seconds]:
