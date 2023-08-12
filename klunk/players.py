@@ -15,8 +15,13 @@ class ExtractFailure:
     pass
 
 def _extract(t, k):
-    if not k.startswith('_') and hasattr(t, k):
-        return getattr(t, k)
+    # UGH THIS SHOULD BE FACTORED OUT
+    # STOP COPY PASTING THINGS AHHHHH
+    if not k.startswith('_'):
+        if hasattr(t, k):
+            return getattr(t, k)
+        if hasattr(t, 'rql_' + k):
+            return getattr(t, 'rql_' + k)()
     return ExtractFailure
 
 def _lextract(tl, k):
@@ -93,6 +98,11 @@ class Player:
         assert mode == 2
         return self.time_completions / self.match_completions
 
+    def rql_average_completion(self):
+        if self.match_completions == 0:
+            return None
+        return self.time_completions / self.match_completions
+
     def display(self):
         print(
             f'{self.nick}: {self.played_per[2]} ranked games, {self.ff_losses[2]} ranked forfeits, {self.wins} wins ({self.ff_wins[2]} due to forfeits), {self.losses[2]} total losses.')
@@ -141,7 +151,7 @@ class PlayerManager:
                     if uuid == m.winner:
                         if m.is_ff:
                             p.ff_wins[m.type] += 1
-                        elif m.type == 2:
+                        else: # CHANGED from ELIF type = 2
                             # Ranked, no FF, winner, not decay.
                             p.match_completions += 1
                             p.time_completions += m.duration
