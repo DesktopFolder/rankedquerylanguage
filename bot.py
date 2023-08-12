@@ -160,11 +160,6 @@ async def on_ready():
 
 
 @client.tree.command()
-async def status(interaction: discord.Interaction):
-    await interaction.response.send_message(f'Status is a thing, {interaction.user.mention}')
-
-
-@client.tree.command()
 @app_commands.describe(
     query='Your Ranked query string. See #docs for details.',
 )
