@@ -201,7 +201,13 @@ class Runtime(Component):
             if not d.l:
                 return list()
             extractor = SmartExtractor(d.l[0], attribute)
-            return sorted(d.l, key=lambda x: extractor(x), **kwargs)
+            res = [x for x in d.l if extractor(x) is not None]
+            lb = len(d.l)
+            la = len(res)
+            if la != lb:
+                self.notes.append(f'Warning: During sort on {attribute}, {la - lb} '
+                                  'items were dropped, as their value was None.')
+            return sorted(res, key=lambda x: extractor(x), **kwargs)
 
         @Local
         def localrsort(l: Dataset, attribute):
@@ -264,13 +270,30 @@ class Runtime(Component):
                 self.add_result(f'Dataset currently only has one item.')
 
         @Local
-        def localextract(l: Dataset, val):
+        def localextract(l: Dataset, *args):
             """
-            `extract(attribute)` - Extract the value of an attribute from all input objects.
+            `extract(attribute, ...)` - Extract the value of an attribute from all input objects.
             For example, `| extract winner` gets a list that is JUST the names of all winners.
             In programming terms, this turns [Match(winner=x,...), ...] into [x, ...]
+            If more than one attribute is supplied, extracts all attributes into a tuple.
             """
-            return [x.extract(val) for x in l.l]
+            if len(args) == 1:
+                return [x.extract(*args) for x in l.l]
+            return [tuple(x.extract(arg) for arg in args) for x in l.l]
+
+        @Local
+        def localbetween(d: Dataset, attribute, min_val, max_val):
+            """
+            `between(attribute, minimum, maximum)` - Filters the dataset to only have objects where 
+            min_val <= object.attribute <= max_val. Does floating point comparisons.
+            Note: This is a stopgap solution as proper expression parsing is not implemented yet for
+            filter expressions. In the future, this will just be `filter attribute<4` or similar.
+            """
+            l = float(min_val)
+            u = float(max_val)
+            def is_between(v):
+                return v >= l and v <= u
+            return [x for x in d.l if is_between(float(x.extract(attribute)))]
 
         def getslots(e: Any):
             if hasattr(e, '__slots__'):
