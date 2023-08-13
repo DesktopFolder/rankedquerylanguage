@@ -205,7 +205,7 @@ class Runtime(Component):
             lb = len(d.l)
             la = len(res)
             if la != lb:
-                self.notes.append(f'Warning: During sort on {attribute}, {la - lb} '
+                self.notes.append(f'Warning: During sort on {attribute}, {lb - la} '
                                   'items were dropped, as their value was None.')
             return sorted(res, key=lambda x: extractor(x), **kwargs)
 
@@ -327,6 +327,20 @@ class Runtime(Component):
                     else:
                         d[k] = 'List[...]'
                 self.add_result(f'Example object layout: {d}')
+
+        @Local
+        def localdrop(d: Dataset, attribute, value):
+            """
+            `drop(attribute, value)` - Drops any records where attribute is equal to value.
+            Use None() to get a value of None (otherwise, 'None' will be the value)
+            This is also a temporary solution for filter not being powerful enough.
+            Later, it will be possible to just do `filter winner(not(desktopfolder))`
+            """
+            extractor = SmartExtractor(d.l[0], attribute)
+            if type(value) is tuple:
+                if value[0] == 'None':
+                    value = None
+            return [x for x in d.l if x.extract(attribute) != value]
 
         @Local
         def localfilter(l: Dataset, *args):
