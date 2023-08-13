@@ -34,10 +34,9 @@ def _lextract(tl, k):
 
 
 class Player:
-    def __init__(self, nick: str, uuid: str, latest, elo):
+    def __init__(self, nick: str, uuid: UUID, latest, elo):
         # Sanity check because I added this argument, so...
         # Remove later for performance reasons.
-        assert len(uuid) == 32
         self.nick = nick
         self.uuid = uuid
         self.latest = latest
@@ -91,7 +90,13 @@ class Player:
     def total_time(self):
         return sum(self.time_per.values())
 
+    def rql_total_time(self):
+        return Milliseconds(sum(self.time_per.values()))
+
     def total_games(self):
+        return sum(self.played_per.values())
+
+    def rql_total_games(self):
         return sum(self.played_per.values())
 
     def avg_completion(self, mode=2):
@@ -132,7 +137,7 @@ class PlayerManager:
                 assert uuid is not None
                 if uuid not in self.players:
                     self.players[uuid] = Player(
-                        member.user, uuid, m.date, member.old_elo)
+                        member.user, UUID(uuid), m.date, member.old_elo)
 
                 p = self.players[uuid]
 
@@ -168,7 +173,7 @@ class PlayerManager:
                     if 'nether_entries' not in p.dynamic:
                         p.dynamic['nether_entries'] = list()
                     assert type(m) == match.QueryMatch
-                    e = m.earliest('story.enter_the_nether', uuid)
+                    e = m.earliest('story.enter_the_nether', UUID(uuid))
                     if e is not None:
                         p.dynamic['nether_entries'].append(e.time)
 
