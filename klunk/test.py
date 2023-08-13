@@ -173,6 +173,13 @@ def test_query():
     Query(q("+test | index all | info")).run()
     Query(q("+test | testlog 'Hello world!'")).run()
 
+    # Run more random queries. None of these should throw.
+    Query(q("+test | players")).run()
+    Query(q("+test | players | extract uuid")).run()
+    ASSERT_EQ(len(Query(q("+test | players | take last 5 | count")).run().l), 5)
+    ASSERT_EQ(len(Query(q("+test | players | take 5 | count")).run().l), 5)
+    Query(q("+test | players | vars | attrs | metainfo | help | help metainfo | index all")).run()
+
 @Test
 def test_utils():
     ASSERT_EQ(split_before('', lambda c: c == 'q'), ('', ''))

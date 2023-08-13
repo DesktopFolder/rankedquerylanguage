@@ -111,6 +111,9 @@ class Runtime(Component):
 
         @Local
         def localmetainfo(_):
+            """
+            `metainfo` - Get some information about the bot/project itself.
+            """
             self.add_result("""RankedQueryLanguage is a query system for MCSR matches & players developed by DesktopFolder.
         It is currently in beta & is unlikely to leave that state any time soon.
         The languages used are: Python, Python, and Python.
