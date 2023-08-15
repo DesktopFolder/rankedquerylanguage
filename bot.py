@@ -184,7 +184,11 @@ if __name__ == '__main__':
         print('Finished preloading. Starting up...')
     if '--fake' in a:
         db = False
-        import readline
+        try:
+            import readline # pyright: ignore
+        except:
+            print('Warning: Was unable to import the readline module. '
+                  'To get readline support on windows, try `pip install pyreadline`')
         while True:
             try:
                 x = input("> ").strip()
