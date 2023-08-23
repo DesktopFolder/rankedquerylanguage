@@ -1,5 +1,6 @@
 import discord
 from discord import app_commands
+from io import BytesIO
 
 # leaving this commented in case I want to port this behaviour to v2
 #from qb.db import load_raw_matches, to_idx, to_idx_key
@@ -97,6 +98,8 @@ class QueryEngineV2:
         try:
             result = sb.run()
             if sb._result is not None:
+                if sb._do_upload:
+                    return sb._result
                 return format_result('\n'.join(sb._result))
             if self.formatter is not None:
                 # TODO - maybe format discord here idk man
@@ -171,7 +174,20 @@ async def query(interaction: discord.Interaction, query: str):
     resp = qe.run(query, False, False, True)
     print('Bot finished running query:', query)
     try:
-        await interaction.response.send_message(f'From query: `{query}`:\n{resp}')
+        if type(resp) is list:
+            # Attempt string conversion. LOL this might be a bad idea.
+            s = str()
+            one_gb = 2 * 1024 * 1024 * 1024
+            from klunk import dataset
+            for l in resp:
+                s += dataset.format_str(l)
+                s += '\n'
+                if len(s) > one_gb:
+                    await interaction.response.send_message(f'From query: `{query}`: Failed to upload, too large (>2gb)')
+            s = s.encode("utf-8")
+            await interaction.response.send_message(f'From query: `{query}`', file=discord.File(BytesIO(s), "result.txt"))
+        else:
+            await interaction.response.send_message(f'From query: `{query}`:\n{resp}')
     except:
         print('Failed to send response to /query - likely it took too long.')
 

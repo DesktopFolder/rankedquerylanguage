@@ -29,6 +29,11 @@ class Component:
             elif param in ['tb', 'tracebacks']:
                 self._tracebacks = True
                 self.log(f"{self.name} enabled tracebacks.")
+            # Files! Discord thing.
+            elif param in ['asfile']:
+                self._do_upload = True
+                self.log(f"{self.name} enabled file uploads.")
+
 
     def time(self, s: str, always=False):
         if self._timing or always:
