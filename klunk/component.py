@@ -10,6 +10,8 @@ class Component:
 
         self._tracebacks = False
 
+        self._do_upload = False
+
         self._result = None
 
     def handle_parameters(self, parameters):
