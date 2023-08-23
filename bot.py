@@ -97,9 +97,13 @@ class QueryEngineV2:
             return s
         try:
             result = sb.run()
-            if sb._result is not None:
-                if sb._do_upload:
+            if sb._do_upload:
+                if sb._result is not None:
                     return sb._result
+                if type(result.l) is not list:
+                    return format_result('This could not be made into a file.')
+                return result.l
+            if sb._result is not None:
                 return format_result('\n'.join(sb._result))
             if self.formatter is not None:
                 # TODO - maybe format discord here idk man
