@@ -52,6 +52,49 @@ def SmartExtractor(ex, v):
     except: pass
     raise RuntimeError(f'Could not find a way to extract {v} from {type(ex)}. Try | attrs.')
 
+def SmartReplacer(ex, a):
+    # Creates and returns a smart replacer for ex
+    # Basic setattr based stuff.
+    def _setattr(o, a, v):
+        if a.startswith('_'):
+            raise RuntimeError(f'Cannot set restricted attribute {a} to value {v} on {o}.')
+        setattr(o, a, v)
+
+    # Have to do special things for tuples.
+    if type(ex) == tuple:
+        i = int(a)
+        def tuple_setter(o, v):
+            x = list(o)
+            x[i] = v
+            o = tuple(x)
+            return o
+        return tuple_setter
+    try:
+        t = ex.extract(a)
+        _setattr(ex, a, t)
+        def setter(o, v):
+            _setattr(o, a, v)
+            return o
+        return setter
+    except: pass
+    try:
+        t = ex[a]
+        ex[a] = t
+        def setter(o, v):
+            o[a] = v
+            return o
+        return setter
+    except: pass
+    try:
+        t = ex[0]
+        ex[0] = t
+        def setter(o, v):
+            o[int(a)] = v
+            return o
+        return setter
+    except: pass
+    raise RuntimeError(f'Could not find a way to extract {a} from {type(ex)}. Try | attrs.')
+
 class Runtime(Component):
     def __init__(self, datasets: dict[str, Dataset], commands: dict[str, Callable], formatter=None):
         super().__init__("Runtime")
@@ -213,6 +256,20 @@ class Runtime(Component):
             return sorted(res, key=lambda x: extractor(x), **kwargs)
 
         @Local
+        def localraw(d: Dataset, *attributes):
+            ex = d.example()
+            setters = [SmartReplacer(ex, attribute) for attribute in attributes]
+            getters = [SmartExtractor(ex, attribute) for attribute in attributes]
+            if type(d.l) in [list, set]:
+                def do_replacement(o):
+                    for s, g in zip(setters, getters):
+                        o = s(o, str(g(o)))
+                    return o
+                return [do_replacement(o) for o in d.l]
+            return d.l
+                        
+
+        @Local
         def localrsort(l: Dataset, attribute):
             """
             `rsort(attribute)` - Reverse sorts the dataset based on `attribute`. To list attributes, `help attrs`
@@ -282,7 +339,8 @@ class Runtime(Component):
             """
             if len(args) == 1:
                 return [x.extract(*args) for x in l.l]
-            return [tuple(x.extract(arg) for arg in args) for x in l.l]
+            extractors = [SmartExtractor(l.example(), a) for a in args]
+            return [tuple(e(x) for e in extractors) for x in l.l]
 
         @Local
         def localbetween(d: Dataset, attribute, min_val, max_val):
@@ -332,6 +390,21 @@ class Runtime(Component):
                 self.add_result(f'Example object layout: {d}')
 
         @Local
+        def localexampleinfo(l: Dataset):
+            inf = list()
+            def add_info(n, l, o):
+                if isinstance(o, list) or isinstance(o, tuple):
+                    inner = list()
+                    for i, v in enumerate(o):
+                        add_info(str(i), inner, v)
+                    l.append(f'<{n}: {type(o)} containing: [' + ', '.join(inner) + ']>')
+                    return
+                l.append(f'{n}: {type(o)}')
+            add_info('Example Object', inf, l.example())
+            self.add_result(', '.join(inf))
+
+
+        @Local
         def localdrop(d: Dataset, attribute, value):
             """
             `drop(attribute, value)` - Drops any records where attribute is equal to value.
@@ -343,7 +416,63 @@ class Runtime(Component):
             if type(value) is tuple:
                 if value[0] == 'None':
                     value = None
+                elif value[0] == 'lt':
+                    return [x for x in d.l if x.extract(attribute) >= int(value[1])]
+                elif value[0] == 'anylt':
+                    a, b = attribute.split('.')
+                    return [x for x in d.l if all([y.extract(b) >= int(value[1]) for y in x.extract(a)])]
+                elif value[0] == 'test_winner_lower':
+                    # lol, ok, whatever, language dev later sometime ig
+                    return [m for m in d.l if type(m) == QueryMatch and not m.rql_is_draw() and (m.rql_loser().elo > m.rql_winner().elo)]
             return [x for x in d.l if x.extract(attribute) != value]
+
+        @Local
+        def localtest_list(d: Dataset, attribute, operation, destination = None):
+            # see filter for more details on how this will work in the future lol
+            if operation == 'abs_diff':
+                def apply(o, v):
+                    if type(o) == tuple:
+                        o = list(o)
+                    if isinstance(o, list):
+                        if destination is None:
+                            o.append(v)
+                        else:
+                            if not destination.isdigit():
+                                raise ValueError(f'Destination {destination} must be integral.')
+                            o[int(destination)] = v
+                        return o
+                    if destination is None:
+                        raise RuntimeError(f'Must provide destination for object abs_diffs (t={type(o)})')
+                    setattr(o, destination, v)
+                    return o
+
+                # ye
+                get_values = None
+                if '.' in attribute:
+                    atts = attribute.split('.')
+                    if len(atts) != 2:
+                        raise RuntimeError('cannot currently go more than 2 objects deep, sorry.')
+                    a, b = atts
+                    ex = d.example()
+                    l1 = SmartExtractor(ex, a)
+                    l2 = SmartExtractor(l1(ex), b)
+                    def get_values_deep(o):
+                        return [l2(oval) for oval in l1(o)] 
+                    get_values = get_values_deep
+                else:
+                    l1 = SmartExtractor(d.example(), attribute)
+                    def get_values_light(o):
+                        return l1(o)
+                    get_values = get_values_light
+                        
+                def do_diff(o):
+                    vs = get_values(o)
+                    return abs(vs[0] - vs[1])
+
+                return [apply(o, do_diff(o)) for o in d.l]
+
+            else:
+                raise RuntimeError(f'Unsupported operation: {operation}')
 
         @Local
         def localfilter(l: Dataset, *args):

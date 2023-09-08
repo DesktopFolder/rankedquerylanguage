@@ -12,6 +12,15 @@ def type_int(t: str):
     return {'casual': 1, 'ranked': 2, 'private': 3, 'event': 4}[t.lower()]
 
 
+def _extract(t, k):
+    if not k.startswith('_'):
+        if hasattr(t, k):
+            return getattr(t, k)
+        if hasattr(t, 'rql_' + k):
+            return getattr(t, 'rql_' + k)()
+    return ExtractFailure
+
+
 class MatchMember:
     __slots__ = ('uuid', # uuid: str (UUID... obviously)
                  'user', # nickname: str
@@ -33,6 +42,12 @@ class MatchMember:
         self.change = None
         self.elo_after = None
 
+    def extract(self, attribute):
+        return _extract(self, attribute)
+
+    def __getitem__(self, attribute):
+        return self.extract(attribute)
+
 class Timeline:
     __slots__ = ('time', # time: Milliseconds
                  'id', # timeline: str
@@ -46,14 +61,6 @@ class Timeline:
 
 class ExtractFailure:
     pass
-
-def _extract(t, k):
-    if not k.startswith('_'):
-        if hasattr(t, k):
-            return getattr(t, k)
-        if hasattr(t, 'rql_' + k):
-            return getattr(t, 'rql_' + k)()
-    return ExtractFailure
 
 def _lextract(tl, k):
     if not tl:
@@ -208,6 +215,9 @@ class QueryMatch:
 
     def rql_loser(self):
         return self.get_other_member(self.winner)
+
+    def rql_winner(self):
+        return self.get_member(self.winner)
 
     def rql_completed(self):
         return not self.rql_is_draw() and not self.is_ff

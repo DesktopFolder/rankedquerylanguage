@@ -48,3 +48,8 @@ def _command_count_uniques(d: Dataset, val: str|None = None):
     if val is None:
         return Counter(d.l).get()
     raise RuntimeError('count_uniques does not support arguments yet.')
+
+@Command
+def _command_randomselect(d: Dataset, val: str):
+    import random
+    return random.sample(d.l, k=int(val))

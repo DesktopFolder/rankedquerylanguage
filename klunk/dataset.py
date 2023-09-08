@@ -114,6 +114,14 @@ class Dataset:
         if type(val) == str:
             return val
 
+    def example(self):
+        if type(self.l) in [list, set]:
+            try:
+                return self.l[0]
+            except:
+                return None
+        return self.l
+
 def AsDefaultDatalist(l: list[QueryMatch], current_season: int):
     return to_idx('ranked.current.nodecay', l, current_season)
 

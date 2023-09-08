@@ -19,6 +19,19 @@ class Query(Component):
 
         self.result = None
 
+    def get_datasets(self, debug = True, set_discord = False):
+        from os.path import isfile
+        if isfile('location.txt'):
+            self.log("Using location.txt to load matches.")
+            loc = open('location.txt').read().strip()
+        else:
+            self.log("Loading sample matches.")
+            loc = "klunk/samples/"
+
+        # Now construct the runtime, for which we need to load samples, etc.
+        datasets = load_defaults(loc, quiet = not debug, set_discord = set_discord)
+        return datasets
+
     def run(self):
         self.log(f"Running with query: {self.query}")
         self.time("Full query", always=True) # must ALWAYS do this, as we parse later
@@ -29,16 +42,8 @@ class Query(Component):
 
         self.handle_parameters(self.parameters)
 
-        from os.path import isfile
-        if isfile('location.txt'):
-            self.log("Using location.txt to load matches.")
-            loc = open('location.txt').read().strip()
-        else:
-            self.log("Loading sample matches.")
-            loc = "klunk/samples/"
-
         # Now construct the runtime, for which we need to load samples, etc.
-        datasets = load_defaults(loc, quiet = not self.debug, set_discord = self.formatter is not None)
+        datasets = self.get_datasets(self.debug, set_discord = self.formatter is not None)
         commands = dict()
         self.runtime = Runtime(datasets, commands, formatter=self.formatter)
 
