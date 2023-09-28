@@ -53,3 +53,10 @@ def _command_count_uniques(d: Dataset, val: str|None = None):
 def _command_randomselect(d: Dataset, val: str):
     import random
     return random.sample(d.l, k=int(val))
+
+@Command
+def _command_dropn(d: Dataset, val: str):
+    """
+    `dropn` - drop the first n values.
+    """
+    return d.l[int(val):]
