@@ -137,13 +137,13 @@ class PlayerManager:
                 assert uuid is not None
                 if uuid not in self.players:
                     self.players[uuid] = Player(
-                        member.user, UUID(uuid), m.date, member.old_elo)
+                        member.user, UUID(uuid), m.date, member.elo_after or member.old_elo)
 
                 p = self.players[uuid]
 
                 if p.latest < m.date:
                     p.nick = member.user
-                    p.elo = member.old_elo
+                    p.elo = member.elo_after or member.old_elo
 
                 if m.has_elos:
                     p.history[m.date] = member.elo_after
