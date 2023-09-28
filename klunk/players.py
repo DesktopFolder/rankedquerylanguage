@@ -149,6 +149,7 @@ class PlayerManager:
                     p.elo = member.elo_after
                     if p.elo == -1:
                         p.elo = None
+                    p.latest = m.date
 
                 if m.has_elos:
                     p.history[m.date] = member.elo_after

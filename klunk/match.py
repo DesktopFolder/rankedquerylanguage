@@ -208,7 +208,11 @@ class QueryMatch:
                 s = self.members.get(p['uuid'])
                 assert s is not None
                 s.elo = p['score']
-                s.elo_after = p['score'] + p['change']
+                if p['score'] == -1:
+                    s.elo_after = None
+                else:
+                    s.elo_after = p['score'] + p['change']
+                s.change = p['change']
 
     def rql_is_draw(self):
         return self.winner == '__draw'
