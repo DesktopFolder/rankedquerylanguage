@@ -40,7 +40,9 @@ class Player:
         self.nick = nick
         self.uuid = uuid
         self.latest = latest
-        self.elo = elo
+        self.elo = elo # NONE UNLESS CALIBRATED
+        if self.elo == -1:
+            self.elo = None
         self.history = dict()
         self.history_missing = 0
 
@@ -143,7 +145,10 @@ class PlayerManager:
 
                 if p.latest < m.date:
                     p.nick = member.user
+                    # YOUR ELO IS NONE UNLESS YOU CALIBRATE
                     p.elo = member.elo_after
+                    if p.elo == -1:
+                        p.elo = None
 
                 if m.has_elos:
                     p.history[m.date] = member.elo_after
