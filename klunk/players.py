@@ -108,7 +108,7 @@ class Player:
     def rql_average_completion(self):
         if self.match_completions == 0:
             return None
-        return self.time_completions / self.match_completions
+        return Milliseconds(self.time_completions // self.match_completions)
 
     def display(self):
         print(
