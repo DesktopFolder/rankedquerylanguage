@@ -16,18 +16,20 @@ from .utils import average, time_fmt
 def get_help():
     return """Klunk Beta
 Compose a query with pipes (|), commands (filter, sort, etc), and arguments (e.g. `filter winner(DesktopFolder)`)
-The dataset is manipulated, sorted, filtered, etc. through the pipeline, but you may output information from it at any point.
+The dataset of all matches (**up until when the bot was last restarted, auto updating is a WIP**) will be ran through your query. For an example match, see e.g. https://mcsrranked.com/api/matches/350000 - note that the language currently cannot see/manipulate some subsets of this data (most importantly splits).
+**By default,** the 'default index' will be autoloaded. This index contains matches **only from the current season** (but not *all* of them, as the bot is unlikely to be up to date, see previous note on auto updating), **only ranked matches**, and **does not include decay matches**. If you would prefer to run your over previous seasonal data, you can start your command with `index all|` or `index most|`. Note that `index all|` contains ALL ranked matches, *including cheated matches, unranked matches, and decay matches*, which are unlikely to be useful. It is recommended to either filter out cheated matches with `filter noabnormal|` or use `index most|`, which contains cross-seasonal data, but without cheated/decay/unranked matches.
+Throughout the execution of your 'query pipeline', the dataset can be manipulated, sorted, filtered, etc. At any step, you can use commands like `count` or `attrs` to add output information about the dataset at the current point, which may be useful for understanding the query results.
 
 Important notes:
-    - `filter`, `sort`, etc use magic extraction methods to query data. To determine what keys are available to sort/filter/etc on,
-      pipe your data first into `attrs` (e.g. `index some-index | some-commands | attrs`)
+    - `filter`, `sort`, etc use magic extraction methods to query data. To determine what keys are available to sort/filter/etc on, pipe your data first into `attrs` (e.g. `index some-index | some-commands | attrs`)
     - You can list all available commands with `commands`. However, some may be for debugging (or otherwise unhelpful)
+    - You can see help for a specific command with `/query help COMMAND`, assuming I remembered to add it
+    - Error messages are not very good still. However, most errors involve overfiltering at a previous pipeline stage.
 
 Examples:
     - `index all | filter season(1) type(2) nodecay | count`
       - Uses the `index` command to switch to the `all` index, which has all matches ever recorded.
-      - Uses the `filter` command with `season(1)` to remove all non-season-1 matches, `type(2)` to only have ranked matches,
-        and `nodecay` to remove all decay matches (which are automatically created when a player experiences ELO decay)
+      - Uses the `filter` command with `season(1)` to remove all non-season-1 matches, `type(2)` to only have ranked matches, and `nodecay` to remove all decay matches (which are automatically created when a player experiences ELO decay)
       - Uses the `count` command to output the resulting number of matches.
 """
 
