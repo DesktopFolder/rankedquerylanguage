@@ -7,6 +7,7 @@ from io import BytesIO
 #from qb.match import QueryMatch
 
 from klunk import sandbox
+from klunk.language import ParseError
 
 
 MY_GUILD = discord.Object(id=1133544816563716250)  # replace with your guild id
@@ -109,6 +110,14 @@ class QueryEngineV2:
                 # TODO - maybe format discord here idk man
                 return format_result(f'{result.summarize()}')
             return format_result(f'{result.summarize()}')
+        except ParseError as e:
+            extra = "\nIt looks like your query failed to parse. "
+            extra += "Try `/query help` to get some examples."
+            if sb._tracebacks:
+                import traceback
+                return format_result(f'{traceback.format_exc().rstrip()}{extra}')
+            else:
+                return format_result(f'Error: {e}{extra}')
         except Exception as e:
             if sb._tracebacks:
                 import traceback

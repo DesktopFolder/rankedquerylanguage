@@ -26,7 +26,10 @@ Important notes:
     - You can see help for a specific command with `/query help COMMAND`, assuming I remembered to add it
     - Error messages are not very good still. However, most errors involve overfiltering at a previous pipeline stage.
 
-Examples:
+For examples, see /examples"""
+
+def get_examples():
+    return """Examples:
     - `index all | filter season(1) type(2) nodecay | count`
       - Uses the `index` command to switch to the `all` index, which has all matches ever recorded.
       - Uses the `filter` command with `season(1)` to remove all non-season-1 matches, `type(2)` to only have ranked matches, and `nodecay` to remove all decay matches (which are automatically created when a player experiences ELO decay)
@@ -248,6 +251,13 @@ class Runtime(Component):
             This changes the datatype that commands operate over.
             """
             return l.clone(list(PlayerManager(l.l).players.values()))
+
+        @Local
+        def localexamples(_):
+            """
+            `examples` - Prints some examples.
+            """
+            self.add_result(get_examples())
 
         @Local
         def localhelp(_, arg=None):
@@ -597,6 +607,7 @@ class Runtime(Component):
             eid = f'Expression@c:{e.loc}'
             self.time(eid)
             res = try_execute(dataset, e)
+            # TODO - rolling 'latest dataset metainfo' here for games
             if res is None:
                 pass
             elif type(res) == list:
