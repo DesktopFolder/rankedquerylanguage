@@ -12,6 +12,7 @@ from .utils import average, time_fmt
 # Later - this would be nice :)
 # from .language import Compiler, Tokenizer
 
+
 def get_help():
     return """Klunk Beta
 Compose a query with pipes (|), commands (filter, sort, etc), and arguments (e.g. `filter winner(DesktopFolder)`)
@@ -30,39 +31,50 @@ Examples:
       - Uses the `count` command to output the resulting number of matches.
 """
 
+
 def SmartExtractor(ex, v):
     # Creates and returns a smart extractor for ex
     try:
         ex.extract(v)
+
         def getter(o):
             return o.extract(v)
         return getter
-    except: pass
+    except:
+        pass
     try:
         _ = ex[v]
+
         def getter(o):
             return o[v]
         return getter
-    except: pass
+    except:
+        pass
     try:
         _ = ex[0]
+
         def getter(o):
             return o[int(v)]
         return getter
-    except: pass
-    raise RuntimeError(f'Could not find a way to extract {v} from {type(ex)}. Try | attrs.')
+    except:
+        pass
+    raise RuntimeError(
+        f'Could not find a way to extract {v} from {type(ex)}. Try | attrs.')
+
 
 def SmartReplacer(ex, a):
     # Creates and returns a smart replacer for ex
     # Basic setattr based stuff.
     def _setattr(o, a, v):
         if a.startswith('_'):
-            raise RuntimeError(f'Cannot set restricted attribute {a} to value {v} on {o}.')
+            raise RuntimeError(
+                f'Cannot set restricted attribute {a} to value {v} on {o}.')
         setattr(o, a, v)
 
     # Have to do special things for tuples.
     if type(ex) == tuple:
         i = int(a)
+
         def tuple_setter(o, v):
             x = list(o)
             x[i] = v
@@ -72,28 +84,36 @@ def SmartReplacer(ex, a):
     try:
         t = ex.extract(a)
         _setattr(ex, a, t)
+
         def setter(o, v):
             _setattr(o, a, v)
             return o
         return setter
-    except: pass
+    except:
+        pass
     try:
         t = ex[a]
         ex[a] = t
+
         def setter(o, v):
             o[a] = v
             return o
         return setter
-    except: pass
+    except:
+        pass
     try:
         t = ex[0]
         ex[0] = t
+
         def setter(o, v):
             o[int(a)] = v
             return o
         return setter
-    except: pass
-    raise RuntimeError(f'Could not find a way to extract {a} from {type(ex)}. Try | attrs.')
+    except:
+        pass
+    raise RuntimeError(
+        f'Could not find a way to extract {a} from {type(ex)}. Try | attrs.')
+
 
 class Runtime(Component):
     def __init__(self, datasets: dict[str, Dataset], commands: dict[str, Callable], formatter=None):
@@ -104,9 +124,10 @@ class Runtime(Component):
         self.formatter = formatter
         self.notes = list()
 
-        alldatalen = len(self.datasets['all'].l) 
+        alldatalen = len(self.datasets['all'].l)
         if alldatalen < 50000:
-            self.notes.append(f'Running with total dataset size {alldatalen} - likely in testing mode.')
+            self.notes.append(
+                f'Running with total dataset size {alldatalen} - likely in testing mode.')
 
     def format(self, s, k):
         ff = self.formatter
@@ -190,6 +211,8 @@ class Runtime(Component):
                 for v in l.keys():
                     lcoms.add(v)
             self.add_result(f'Valid commands:', ', '.join(sorted(lcoms)))
+            self.add_result(
+                'Each query segment must begin with a pipe (|) followed by a command, followed by its arguments. For information on a specific command, use /query help COMMAND')
 
         @Local
         def localallfuncs(_):
@@ -197,7 +220,8 @@ class Runtime(Component):
             `allfuncs` - Debugging command for listing all functions, including hidden ones.
             """
             for i, comlist in enumerate(comlists):
-                self.add_result(f'Functions with priority {len(comlists)-i}:', ', '.join(comlist.keys()))
+                self.add_result(
+                    f'Functions with priority {len(comlists)-i}:', ', '.join(comlist.keys()))
 
         @Local
         def localinfo(_):
@@ -234,7 +258,8 @@ class Runtime(Component):
                 return
             com = lookup_command(arg)
             if com is None:
-                self.add_result(f'{self.format(arg, "tick")} is not a valid command.')
+                self.add_result(
+                    f'{self.format(arg, "tick")} is not a valid command.')
                 return
             self.add_result(self.format(com.__doc__, 'doc'))
 
@@ -259,7 +284,8 @@ class Runtime(Component):
         def localraw(d: Dataset, *attributes):
             ex = d.example()
             setters = [SmartReplacer(ex, attribute) for attribute in attributes]
-            getters = [SmartExtractor(ex, attribute) for attribute in attributes]
+            getters = [SmartExtractor(ex, attribute)
+                       for attribute in attributes]
             if type(d.l) in [list, set]:
                 def do_replacement(o):
                     for s, g in zip(setters, getters):
@@ -267,7 +293,6 @@ class Runtime(Component):
                     return o
                 return [do_replacement(o) for o in d.l]
             return d.l
-                        
 
         @Local
         def localrsort(l: Dataset, attribute):
@@ -289,7 +314,8 @@ class Runtime(Component):
             # TODO lol
             ints, sa = partition_list(args, lambda a: a.isdigit())
             if len(ints) > 1:
-                raise RuntimeError(f'Command `take` got {len(ints)} arguments, requires at most 1.')
+                raise RuntimeError(
+                    f'Command `take` got {len(ints)} arguments, requires at most 1.')
             if len(ints) == 0:
                 if 'last' in sa:
                     # Special take behaviour.
@@ -314,10 +340,12 @@ class Runtime(Component):
                 return self.add_result(f'Could not average type {type(example)}.')
             result = average([x.extract(val) for x in data])
             if 'time' in args or type(example) in [Milliseconds, Seconds]:
-                tf = time_fmt(result, type(example) is Seconds or 'seconds' in args)
+                tf = time_fmt(result, type(example)
+                              is Seconds or 'seconds' in args)
                 self.add_result(f'Average {val}: {tf}')
             else:
-                self.add_result(f'Average {val}: ' + str((result if 'precise' in args else round(result, 2))))
+                self.add_result(
+                    f'Average {val}: ' + str((result if 'precise' in args else round(result, 2))))
 
         @Local
         def localcount(l: Dataset):
@@ -352,6 +380,7 @@ class Runtime(Component):
             """
             l = float(min_val)
             u = float(max_val)
+
             def is_between(v):
                 return v >= l and v <= u
             return [x for x in d.l if is_between(float(x.extract(attribute)))]
@@ -368,7 +397,8 @@ class Runtime(Component):
             e.g. `attrs` or `players | attrs` are the only cases where you'd want to use this currently.
             """
             example = l.l[0]
-            self.add_result(f'Known accessible attributes of {type(example)}: ' + ", ".join(getslots(example)))
+            self.add_result(
+                f'Known accessible attributes of {type(example)}: ' + ", ".join(getslots(example)))
 
         @Local
         def localexample(l: Dataset, attribute=None):
@@ -378,7 +408,8 @@ class Runtime(Component):
             """
             example = l.l[0]
             if attribute is not None:
-                self.add_result(f'Example value of {attribute}: {example.extract(attribute)}')
+                self.add_result(
+                    f'Example value of {attribute}: {example.extract(attribute)}')
             else:
                 d = dict()
                 for k in getslots(example):
@@ -392,17 +423,18 @@ class Runtime(Component):
         @Local
         def localexampleinfo(l: Dataset):
             inf = list()
+
             def add_info(n, l, o):
                 if isinstance(o, list) or isinstance(o, tuple):
                     inner = list()
                     for i, v in enumerate(o):
                         add_info(str(i), inner, v)
-                    l.append(f'<{n}: {type(o)} containing: [' + ', '.join(inner) + ']>')
+                    l.append(
+                        f'<{n}: {type(o)} containing: [' + ', '.join(inner) + ']>')
                     return
                 l.append(f'{n}: {type(o)}')
             add_info('Example Object', inf, l.example())
             self.add_result(', '.join(inf))
-
 
         @Local
         def localdrop(d: Dataset, attribute, value):
@@ -427,7 +459,7 @@ class Runtime(Component):
             return [x for x in d.l if x.extract(attribute) != value]
 
         @Local
-        def localtest_list(d: Dataset, attribute, operation, destination = None):
+        def localtest_list(d: Dataset, attribute, operation, destination=None):
             # see filter for more details on how this will work in the future lol
             if operation == 'abs_diff':
                 def apply(o, v):
@@ -438,11 +470,13 @@ class Runtime(Component):
                             o.append(v)
                         else:
                             if not destination.isdigit():
-                                raise ValueError(f'Destination {destination} must be integral.')
+                                raise ValueError(
+                                    f'Destination {destination} must be integral.')
                             o[int(destination)] = v
                         return o
                     if destination is None:
-                        raise RuntimeError(f'Must provide destination for object abs_diffs (t={type(o)})')
+                        raise RuntimeError(
+                            f'Must provide destination for object abs_diffs (t={type(o)})')
                     setattr(o, destination, v)
                     return o
 
@@ -451,20 +485,23 @@ class Runtime(Component):
                 if '.' in attribute:
                     atts = attribute.split('.')
                     if len(atts) != 2:
-                        raise RuntimeError('cannot currently go more than 2 objects deep, sorry.')
+                        raise RuntimeError(
+                            'cannot currently go more than 2 objects deep, sorry.')
                     a, b = atts
                     ex = d.example()
                     l1 = SmartExtractor(ex, a)
                     l2 = SmartExtractor(l1(ex), b)
+
                     def get_values_deep(o):
-                        return [l2(oval) for oval in l1(o)] 
+                        return [l2(oval) for oval in l1(o)]
                     get_values = get_values_deep
                 else:
                     l1 = SmartExtractor(d.example(), attribute)
+
                     def get_values_light(o):
                         return l1(o)
                     get_values = get_values_light
-                        
+
                 def do_diff(o):
                     vs = get_values(o)
                     return abs(vs[0] - vs[1])
@@ -487,7 +524,8 @@ class Runtime(Component):
             for filt in args:
                 # Short circuit if we have no objects.
                 if not res:
-                    self.log(f'Avoided applying filter {filt} and any additional filters (empty result).')
+                    self.log(
+                        f'Avoided applying filter {filt} and any additional filters (empty result).')
                     break
 
                 # For now, support a bunch of nice boolean autodetection/conversions.
@@ -498,7 +536,8 @@ class Runtime(Component):
                         b = False
                         filt = filt[2:]
                     filt = (f'is_{filt}', b)
-                    self.log(f'Found simple boolean filter {prefilt} and converted it to {filt}.')
+                    self.log(
+                        f'Found simple boolean filter {prefilt} and converted it to {filt}.')
 
                 if type(filt) == tuple:
                     # Let's be smart about this. Get our desired destination type for conversion.
@@ -510,19 +549,23 @@ class Runtime(Component):
                         desired = parse_boolean(desired)
                     elif type(example) is UUID:
                         try:
-                            desired = self.datasets["__users"].l[desired.lower()]
+                            desired = self.datasets["__users"].l[desired.lower(
+                            )]
                         except KeyError:
-                            self.notes.append(f'{desired} is not a known username.')
+                            self.notes.append(
+                                f'{desired} is not a known username.')
                             desired = None
                     elif type(example) is int:
                         desired = int(desired)
                     preres = len(res)
                     res = [m for m in res if m.extract(varname) == desired]
-                    self.log(f'Applied filter {filt} and got {len(res)} resulting objects (from {preres}).')
+                    self.log(
+                        f'Applied filter {filt} and got {len(res)} resulting objects (from {preres}).')
                     if not res:
                         return l.clone(f'Empty dataset after applying filter: {filt}')
                 else:
-                    raise RuntimeError(f'Unsupported filter type {type(filt)} for filter {filt}')
+                    raise RuntimeError(
+                        f'Unsupported filter type {type(filt)} for filter {filt}')
 
             return res
 
@@ -533,7 +576,8 @@ class Runtime(Component):
                 if fname in comlist:
                     self.log(f"Attempting to execute {fname}({args})")
                     return comlist[fname](l, *args)
-            raise RuntimeError(f"{fname} is not a valid command name. Try `commands` to list valid commands.")
+            raise RuntimeError(
+                f"{fname} is not a valid command name. Try `commands` to list valid commands.")
 
         def try_execute(l, e: Expression):
             if not e.arguments:
@@ -557,7 +601,8 @@ class Runtime(Component):
                 dataset = dataset.clone(res)
             else:
                 if not type(res) == Dataset:
-                    raise RuntimeError(f"Got unhandled result type {type(res)} in {e}")
+                    raise RuntimeError(
+                        f"Got unhandled result type {type(res)} in {e}")
                 dataset = res
             self.log_time(eid)
 
