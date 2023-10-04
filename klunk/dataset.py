@@ -26,7 +26,11 @@ class PikaConnection:
         self.channel.basic_consume(on_message_callback=lambda *args: self.callback(*args), queue='rql-rpc')
         
         self.connection.process_data_events(0)
-        
+
+    def update_datasets(self):
+        assert self.connection is not None
+        self.connection.process_data_events(0)
+        print(len(self.recv), self.recv)
 
 __mq = PikaConnection()
 
@@ -180,4 +184,8 @@ def load_defaults(p: str, quiet = False, set_discord = False):
             "__uuids": Dataset("UUIDs", uuids),
             "__users": Dataset("Users", users),
         }
+
+    # first, pull new matches from rmq
+    __mq.update_datasets()
+
     return __datasets
