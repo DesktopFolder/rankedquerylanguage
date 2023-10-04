@@ -12,7 +12,7 @@ class PikaConnection:
     def __init__(self):
         self.connection = None
         self.channel = None
-        self.recv: list[str] = list()
+        self.recv: list[bytes] = list()
 
     def callback(self, _, __, __1__, body):
         print(f'received body with len {len(body)} (first bit: {body[0:24]})')
@@ -25,7 +25,9 @@ class PikaConnection:
         self.channel.queue_declare(queue='rql-ipc')
         self.channel.basic_consume(on_message_callback=lambda *args: self.callback(*args), queue='rql-ipc')
         
+        # clear out the queue.
         self.connection.process_data_events(0)
+        self.recv.clear()
 
     def update_datasets(self):
         assert self.connection is not None
@@ -35,6 +37,7 @@ class PikaConnection:
         ilen = len(recv)
         print(f'Updating with {ilen} matches.')
         # Check for validity first.
+        recv = [m.decode() for m in recv]
         recv = [m for m in [m.split('|', maxsplit=1) for m in recv] if len(m) == 2 and m[0].isnumeric()]
         alen = len(recv)
         if alen != ilen:
