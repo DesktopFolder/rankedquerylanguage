@@ -30,6 +30,7 @@ class PikaConnection:
         self.recv.clear()
 
     def update_datasets(self):
+        global __datasets
         assert self.connection is not None
         self.connection.process_data_events(0)
         recv = self.recv
