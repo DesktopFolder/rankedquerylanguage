@@ -8,6 +8,27 @@ from .players import Player
 __datasets = None
 __discord = False
 
+class PikaConnection:
+    def __init__(self):
+        self.connection = None
+        self.channel = None
+        self.recv = list()
+
+    def callback(self, _, __, __1__, body):
+        print(f'received {body}')
+        self.recv.append(body)
+
+    def start_consuming(self):
+        import pika
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+        self.channel = self.connection.channel()
+        self.channel.queue_declare(queue='rql-rpc')
+        self.channel.basic_consume(on_message_callback=lambda *args: self.callback(*args), queue='rql-rpc')
+        
+        self.connection.process_data_events(0)
+        
+
+__mq = PikaConnection()
 
 def default_groups(dirname):
     from os import listdir
@@ -27,6 +48,7 @@ def load_raw_matches(dirname, quiet = False) -> list[QueryMatch]:
 
     for g in groups:
         with open(f'{dirname}{g}') as file:
+            # one line = one match
             for l in file:
                 stripped = l.strip()
                 if stripped != '{}':
@@ -146,6 +168,9 @@ def load_defaults(p: str, quiet = False, set_discord = False):
         __discord = True
     global __datasets
     if __datasets is None:
+        print('Starting RabbitMQ consumer.')
+        __mq.start_consuming()
+        print('Finished loading RabbitMQ consumer.')
         l = load_raw_matches(p, quiet)
         uuids, users = GetUserMappings(l)
         __datasets = {
