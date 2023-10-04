@@ -12,10 +12,10 @@ class PikaConnection:
     def __init__(self):
         self.connection = None
         self.channel = None
-        self.recv = list()
+        self.recv: list[str] = list()
 
     def callback(self, _, __, __1__, body):
-        print(f'received {body}')
+        print(f'received body with len {len(body)} (first bit: {body[0:24]})')
         self.recv.append(body)
 
     def start_consuming(self):
@@ -30,7 +30,42 @@ class PikaConnection:
     def update_datasets(self):
         assert self.connection is not None
         self.connection.process_data_events(0)
-        print(len(self.recv), self.recv)
+        recv = self.recv
+        self.recv = list()
+        ilen = len(recv)
+        print(f'Updating with {ilen} matches.')
+        # Check for validity first.
+        recv = [m for m in [m.split('|', maxsplit=1) for m in recv] if len(m) == 2 and m[0].isnumeric()]
+        alen = len(recv)
+        if alen != ilen:
+            print(f'Removed {ilen - alen} bad messages (test/etc?)')
+
+        # Actually update with these matches.
+        res: list[QueryMatch] = list()
+        for n, l in recv:
+            stripped = l.strip()
+            if stripped != '{}':
+                try:
+                    res.append(from_json_string(stripped))
+                except Exception as e:
+                    print(f'Char 0: {stripped[0]}')
+                    raise RuntimeError(f'Bad JSON document: "{stripped}"') from e
+            else:
+                pass
+
+        assert __datasets is not None
+        if res[0].season != res[-1].season or res[0].season != __datasets['default'].l[0].season:
+            raise RuntimeError(f'The current season has changed. Please reboot the bot :)')
+
+        # assume default is unchanged.
+        res = sorted(res, key=lambda m: m.id)
+        __datasets['default'].update(AsDefaultDatalist(res, res[0].season))
+        __datasets['all'].update(res)
+        __datasets['most'].update(AsMostDatalist(res))
+        uuids, users = GetUserMappings(res)
+        __datasets['__uuids'].update_overwrite_dict(uuids)
+        __datasets['__users'].update_overwrite_dict(users)
+
 
 __mq = PikaConnection()
 
@@ -119,6 +154,18 @@ class Dataset:
 
     def clone(self, l):
         return Dataset(self.name, l)
+
+    def update(self, other: list[QueryMatch]):
+        last_mid = self.l[-1]
+        # ensure we don't get duplicate matches
+        ilen = len(other)
+        other = [m for m in other if m.id > last_mid]
+        print(f'removed {ilen - len(other)} matches from update (dupes)')
+        self.l.extend(other)
+
+    def update_overwrite_dict(self, other: dict[str, str]):
+        for k, v in other.items():
+            self.l[k] = v
 
     def info(self):
         if type(self.l) in [list, dict]:
