@@ -5,7 +5,7 @@ from .filters import *
 from typing import Any
 from .players import Player
 
-__datasets = None
+_datasets_ = None
 __discord = False
 
 class PikaConnection:
@@ -30,7 +30,7 @@ class PikaConnection:
         self.recv.clear()
 
     def update_datasets(self):
-        global __datasets
+        global _datasets_
         assert self.connection is not None
         self.connection.process_data_events(0)
         recv = self.recv
@@ -57,21 +57,21 @@ class PikaConnection:
             else:
                 pass
 
-        assert __datasets is not None
-        if res[0].season != res[-1].season or res[0].season != __datasets['default'].l[0].season:
+        assert _datasets_ is not None
+        if res[0].season != res[-1].season or res[0].season != _datasets_['default'].l[0].season:
             raise RuntimeError(f'The current season has changed. Please reboot the bot :)')
 
         # assume default is unchanged.
         res = sorted(res, key=lambda m: m.id)
-        __datasets['default'].update(AsDefaultDatalist(res, res[0].season))
-        __datasets['all'].update(res)
-        __datasets['most'].update(AsMostDatalist(res))
+        _datasets_['default'].update(AsDefaultDatalist(res, res[0].season))
+        _datasets_['all'].update(res)
+        _datasets_['most'].update(AsMostDatalist(res))
         uuids, users = GetUserMappings(res)
-        __datasets['__uuids'].update_overwrite_dict(uuids)
-        __datasets['__users'].update_overwrite_dict(users)
+        _datasets_['__uuids'].update_overwrite_dict(uuids)
+        _datasets_['__users'].update_overwrite_dict(users)
 
 
-__mq = PikaConnection()
+_mq_ = PikaConnection()
 
 def default_groups(dirname):
     from os import listdir
@@ -139,11 +139,11 @@ def format_str(o: object):
     if type(o) == Player:
         return str(o)
     if type(o) == UUID:
-        if __datasets is not None:
+        if _datasets_ is not None:
             try:
                 if __discord:
-                    return __datasets['__uuids'].l[o].replace('_', '\\_')
-                return __datasets['__uuids'].l[o]
+                    return _datasets_['__uuids'].l[o].replace('_', '\\_')
+                return _datasets_['__uuids'].l[o]
             except KeyError:
                 raise KeyError(f'{o} is not a valid username.')
     if type(o) == Milliseconds:
@@ -221,14 +221,14 @@ def load_defaults(p: str, quiet = False, set_discord = False):
     global __discord
     if set_discord:
         __discord = True
-    global __datasets
-    if __datasets is None:
+    global _datasets_
+    if _datasets_ is None:
         print('Starting RabbitMQ consumer.')
-        __mq.start_consuming()
+        _mq_.start_consuming()
         print('Finished loading RabbitMQ consumer.')
         l = load_raw_matches(p, quiet)
         uuids, users = GetUserMappings(l)
-        __datasets = {
+        _datasets_ = {
             "default": Dataset("Default", AsDefaultDatalist(l, l[-1].season)),
             "all": Dataset("All", l),
             "most": Dataset("Most", AsMostDatalist(l)),
@@ -237,6 +237,6 @@ def load_defaults(p: str, quiet = False, set_discord = False):
         }
 
     # first, pull new matches from rmq
-    __mq.update_datasets()
+    _mq_.update_datasets()
 
-    return __datasets
+    return _datasets_
