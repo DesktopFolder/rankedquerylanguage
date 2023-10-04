@@ -22,8 +22,8 @@ class PikaConnection:
         import pika
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
         self.channel = self.connection.channel()
-        self.channel.queue_declare(queue='rql-rpc')
-        self.channel.basic_consume(on_message_callback=lambda *args: self.callback(*args), queue='rql-rpc')
+        self.channel.queue_declare(queue='rql-ipc')
+        self.channel.basic_consume(on_message_callback=lambda *args: self.callback(*args), queue='rql-ipc')
         
         self.connection.process_data_events(0)
 
