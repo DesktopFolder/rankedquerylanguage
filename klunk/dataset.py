@@ -160,7 +160,7 @@ class Dataset:
         return Dataset(self.name, l)
 
     def update(self, other: list[QueryMatch]):
-        last_mid = self.l[-1]
+        last_mid = self.l[-1].id
         # ensure we don't get duplicate matches
         ilen = len(other)
         other = [m for m in other if m.id > last_mid]
