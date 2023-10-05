@@ -57,6 +57,8 @@ class PikaConnection:
         recv = self.recv
         self.recv = list()
         ilen = len(recv)
+        if not recv:
+            return
         print(f'Updating with {ilen} matches.')
         # Check for validity first.
         recv = [m.decode() for m in recv]
@@ -64,6 +66,9 @@ class PikaConnection:
         alen = len(recv)
         if alen != ilen:
             print(f'Removed {ilen - alen} bad messages (test/etc?)')
+
+        if not recv:
+            return
 
         # Actually update with these matches.
         res: list[QueryMatch] = list()
@@ -77,6 +82,9 @@ class PikaConnection:
                     raise RuntimeError(f'Bad JSON document: "{stripped}"') from e
             else:
                 pass
+
+        if not res:
+            return
 
         assert _datasets_ is not None
         if res[0].season != res[-1].season or res[0].season != _datasets_['default'].l[0].season:
