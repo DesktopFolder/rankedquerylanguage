@@ -15,9 +15,10 @@ class PikaConnection:
         self.recv: list[bytes] = list()
         self.broken = False
 
-    def callback(self, _, __, __1__, body):
+    def callback(self, ch, method, __1__, body):
         print(f'received body with len {len(body)} (first bit: {body[0:24]})')
         self.recv.append(body)
+        ch.basic_ack(delivery_tag = method.delivery_tag)
 
     def start_consuming(self):
         import pika
