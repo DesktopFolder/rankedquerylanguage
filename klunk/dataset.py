@@ -13,6 +13,7 @@ class PikaConnection:
         self.connection = None
         self.channel = None
         self.recv: list[bytes] = list()
+        self.broken = False
 
     def callback(self, _, __, __1__, body):
         print(f'received body with len {len(body)} (first bit: {body[0:24]})')
@@ -29,10 +30,28 @@ class PikaConnection:
         self.connection.process_data_events(0)
         self.recv.clear()
 
+    def attempt_process_pika(self, itr = 0):
+        if self.broken:
+            print('ignored attempt to process pika, broken')
+            return
+        try:
+            assert self.connection is not None
+            self.connection.process_data_events(0)
+        except:
+            if itr > 4:
+                self.broken = True
+                raise RuntimeError('Auto updating has broken :sob: please retry your query.')
+            assert self.connection is not None
+            self.channel = self.connection.channel()
+            self.channel.queue_declare(queue='rql-ipc')
+            self.channel.basic_consume(on_message_callback=lambda *args: self.callback(*args), queue='rql-ipc')
+            self.attempt_process_pika(itr + 1)
+
     def update_datasets(self):
         global _datasets_
         assert self.connection is not None
-        self.connection.process_data_events(0)
+        self.attempt_process_pika()
+
         recv = self.recv
         self.recv = list()
         ilen = len(recv)
