@@ -41,7 +41,8 @@ class PikaConnection:
             if itr > 4:
                 self.broken = True
                 raise RuntimeError('Auto updating has broken :sob: please retry your query.')
-            assert self.connection is not None
+            import pika
+            self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
             self.channel = self.connection.channel()
             self.channel.queue_declare(queue='rql-ipc')
             self.channel.basic_consume(on_message_callback=lambda *args: self.callback(*args), queue='rql-ipc')
