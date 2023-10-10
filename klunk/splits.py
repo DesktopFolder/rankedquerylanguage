@@ -49,5 +49,17 @@ def get(ds: Dataset, split_id: str):
     return [get_split(s, split_id) for s in ds.l]
 
 @Split
+def get_if(ds: Dataset, split_id: str):
+    """
+    `get_if(split_id)` - Gets a split, if it exists.
+    """
+    l = list()
+    for s in ds.l:
+        split = get_split(s, split_id=split_id)
+        if split is not None:
+            l.append(split)
+    return l
+
+@Split
 def dump_ids(ds: Dataset):
     return [[split.id for split in l] for l in ds.l]
