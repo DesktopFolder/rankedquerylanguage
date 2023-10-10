@@ -48,6 +48,9 @@ class MatchMember:
     def __getitem__(self, attribute):
         return self.extract(attribute)
 
+class ExtractFailure:
+    pass
+
 class Timeline:
     __slots__ = ('time', # time: Milliseconds
                  'id', # timeline: str
@@ -55,12 +58,18 @@ class Timeline:
                  )
 
     def __init__(self, timeline):
-        self.time: Milliseconds = timeline['time']
+        self.time: Milliseconds = Milliseconds(timeline['time'])
         self.id: str = timeline['timeline']
-        self.uuid: UUID = timeline['uuid']
+        self.uuid: UUID = UUID(timeline['uuid'])
 
-class ExtractFailure:
-    pass
+    def __repr__(self):
+        return f'Timeline({self.time}, {self.id}, {self.uuid})'
+
+    def extract(self, t: str):
+        ex = _extract(self, t)
+        if ex is ExtractFailure:
+            raise RuntimeError(f'Could not extract {t} from Timeline.')
+        return ex
 
 def _lextract(tl, k):
     if not tl:

@@ -3,9 +3,9 @@ from .match import QueryMatch
 from .parse_utils import partition_list
 from .component import Component
 from .expression import Expression
-from .dataset import Dataset
+from .dataset import SUPPORTED_ITERABLES, Dataset
 from typing import Callable, Any
-from . import commands
+from . import commands, jobs, splits
 from .players import MatchPlayer, PlayerManager
 from .parse import parse_boolean
 from .utils import average, time_fmt
@@ -153,7 +153,7 @@ class Runtime(Component):
         # High to low priority.
         # Locals are the lowest priority, and are overwritten otherwise.
         # Is this correct? Idk whatever this is mostly useless segmentation.
-        comlists = [self.commands, commands.basic_commands, localfunclist]
+        comlists = [splits.COMMANDS, self.commands, commands.basic_commands, localfunclist]
 
         def lookup_command(name: str):
             for comdict in comlists:
@@ -178,6 +178,23 @@ class Runtime(Component):
             self.add_result(varlist)
 
         @Local
+        def localdebugecho(_, *args, **kwargs):
+            self.add_result(f'Args: {args}, kwargs: {kwargs}')
+
+        @Local
+        def localassign(l: Dataset, name: str, attr: str|None = None):
+            """
+            `assign` - assign to a variable whose name is provided by the first parameter.
+            Optionally, the second parameter, attr, may be provided. Instead of assigning the full dataset,
+            the values of extract(attr) will be assigned to the variable.
+            """
+            vals = l.l
+            if attr is not None:
+                vals = localextract(l, attr)
+            varlist[name] = vals
+            return l
+
+        @Local
         def localmetainfo(_):
             """
             `metainfo` - Get some information about the bot/project itself.
@@ -199,6 +216,8 @@ class Runtime(Component):
             Usage example: `index all | filter completed | sort duration | take 5` - top 5 completions of all time.
             """
             self.log(f"Changing dataset to {name}")
+            if name.startswith('s') and name[1:].isdecimal():
+                return localfilter(localindex(None, 'most'), ('season', name.lstrip('s')))
             if not name in self.datasets:
                 raise RuntimeError(f'{name} is not a valid dataset name.')
             return self.datasets[name]
@@ -235,6 +254,14 @@ class Runtime(Component):
             self.add_result(dataset.info())
 
         @Local
+        def localdetailedinfo(l: Dataset):
+            """
+            `detailedinfo` - for getting info on the current dataset.
+            Mainly added because info is useless. Uh, I should fix that. Anyways...
+            """
+            self.add_result(l.detailed_info())
+
+        @Local
         def localwait(_, num_seconds):
             """
             `wait(num_seconds)` - wait for some period of time.
@@ -257,6 +284,12 @@ class Runtime(Component):
             `examples` - Prints some examples.
             """
             self.add_result(get_examples())
+
+        @Local
+        def localdebugsplits(l: Dataset):
+            ex = l.example()
+            assert type(ex) == QueryMatch
+            self.add_result(str(ex.timelines))
 
         @Local
         def localhelp(_, arg=None):
@@ -382,6 +415,36 @@ class Runtime(Component):
             return [tuple(e(x) for e in extractors) for x in l.l]
 
         @Local
+        def localsegmentby(l: Dataset, attribute: str):
+            """
+            extract(timelines) -> [[Timeline(),...], ]
+            extractby(uuid, timelines) -> [[Timeline(), ...], ...]
+            """
+            ex = None
+            for v in l.l:
+                if type(v) not in SUPPORTED_ITERABLES:
+                    raise RuntimeError(f'Segment by does not support: {type(v)}')
+                if len(v) > 0:
+                    ex = v[0]
+                    break
+            if ex is None:
+                raise RuntimeError(f'Cannot segment by {attribute} on an empty dataset.')
+            # now we have ex as our example value that we are segmenting list of lists on
+            extractor = SmartExtractor(ex, attribute)
+            newlist = list()
+            for sublist in l.l:
+                newsublists = dict()
+                for item in sublist:
+                    v = extractor(item)
+                    if v not in newsublists:
+                        newsublists[v] = list()
+                    newsublists[v].append(item)
+                # we now have more lists! maybe
+                for newsublist in newsublists.values():
+                    newlist.append(newsublist)
+            return l.clone(newlist)
+
+        @Local
         def localbetween(d: Dataset, attribute, min_val, max_val):
             """
             `between(attribute, minimum, maximum)` - Filters the dataset to only have objects where 
@@ -446,6 +509,12 @@ class Runtime(Component):
                 l.append(f'{n}: {type(o)}')
             add_info('Example Object', inf, l.example())
             self.add_result(', '.join(inf))
+
+        @Local
+        def localdrop_list(d: Dataset, value: str):
+            if value == 'empty':
+                return d.clone([x for x in d.l if len(x) != 0])
+            raise RuntimeError(f'Could not find drop parameter {value}')
 
         @Local
         def localdrop(d: Dataset, attribute, value):
@@ -573,12 +642,19 @@ class Runtime(Component):
                     self.log(
                         f'Applied filter {filt} and got {len(res)} resulting objects (from {preres}).')
                     if not res:
-                        return l.clone(f'Empty dataset after applying filter: {filt}')
+                        raise RuntimeError(f'Empty dataset after applying filter: {filt}. Note that filter parameters are case sensitive, so `filter(desktopfolder)` is NOT the same as `filter(DesktopFolder)`.')
+                        # return l.clone(f'Empty dataset after applying filter: {filt}')
                 else:
                     raise RuntimeError(
                         f'Unsupported filter type {type(filt)} for filter {filt}')
 
             return res
+
+        @Local
+        def localjob(l, job: tuple[str, str]):
+            if type(job) != tuple:
+                raise RuntimeError(f'Job {job} was provided without an argument list.')
+            return jobs.execute(job, l=l, varlist=varlist)
 
         def execute_simple(l, fname, args):
             # Executes a command with the listed arguments.
@@ -609,7 +685,7 @@ class Runtime(Component):
             # TODO - rolling 'latest dataset metainfo' here for games
             if res is None:
                 pass
-            elif type(res) == list:
+            elif type(res) in SUPPORTED_ITERABLES:
                 dataset = dataset.clone(res)
             else:
                 if not type(res) == Dataset:

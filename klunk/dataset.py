@@ -1,12 +1,14 @@
 from klunk.extra_types import UUID, Milliseconds
 from klunk.utils import time_fmt
-from .match import MatchMember, QueryMatch, from_json_string
+from .match import MatchMember, QueryMatch, Timeline, TimelineList, from_json_string
 from .filters import *
 from typing import Any
 from .players import Player
 
 _datasets_ = None
 __discord = False
+
+SUPPORTED_ITERABLES = set([list, dict, set, tuple, TimelineList])
 
 class PikaConnection:
     def __init__(self):
@@ -21,15 +23,19 @@ class PikaConnection:
         ch.basic_ack(delivery_tag = method.delivery_tag)
 
     def start_consuming(self):
-        import pika
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
-        self.channel = self.connection.channel()
-        self.channel.queue_declare(queue='rql-ipc')
-        self.channel.basic_consume(on_message_callback=lambda *args: self.callback(*args), queue='rql-ipc')
-        
-        # clear out the queue.
-        self.connection.process_data_events(0)
-        self.recv.clear()
+        try:
+            import pika
+            self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+            self.channel = self.connection.channel()
+            self.channel.queue_declare(queue='rql-ipc')
+            self.channel.basic_consume(on_message_callback=lambda *args: self.callback(*args), queue='rql-ipc')
+            
+            # clear out the queue.
+            self.connection.process_data_events(0)
+            self.recv.clear()
+        except Exception as e:
+            print(e)
+            self.broken = True
 
     def attempt_process_pika(self, itr = 0):
         if self.broken:
@@ -51,7 +57,8 @@ class PikaConnection:
 
     def update_datasets(self):
         global _datasets_
-        assert self.connection is not None
+        if self.connection is None:
+            return
         self.attempt_process_pika()
 
         recv = self.recv
@@ -163,6 +170,8 @@ def format_str(o: object):
         return str(o)
     if type(o) == tuple:
         return ' '.join([format_str(v) for v in o])
+    if type(o) == Timeline:
+        return format_str(tuple([o.uuid, o.id, o.time]))
     if type(o) == str:
         return o
     if type(o) == Player:
@@ -185,6 +194,14 @@ class Dataset:
         self.l = l
         self.name = name
 
+    def __len__(self):
+        if type(self.l) in SUPPORTED_ITERABLES:
+            return len(self.l)
+        return 1
+
+    def has_iterable(self):
+        return type(self.l) in SUPPORTED_ITERABLES
+
     def clone(self, l):
         return Dataset(self.name, l)
 
@@ -205,6 +222,9 @@ class Dataset:
             return f'Dataset {self.name}, currently with {len(self.l)} objects.'
         return f'Dataset containing {format_str(self.l)}'
 
+    def detailed_info(self):
+        return f'Dataset {self.name}. Contains {len(self)} items. Type of first item: {type(self.example())}'
+
     def summarize(self):
         val = self.l
         if type(val) == dict:
@@ -221,8 +241,10 @@ class Dataset:
             return val
 
     def example(self):
-        if type(self.l) in [list, set]:
+        if type(self.l) in SUPPORTED_ITERABLES:
             try:
+                if type(self.l) == dict:
+                    return list(self.l.values())[0]
                 return self.l[0]
             except:
                 return None
