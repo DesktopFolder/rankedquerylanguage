@@ -1,3 +1,4 @@
+from collections import defaultdict
 from .extra_types import UUID, Milliseconds, Seconds
 from .match import QueryMatch
 from .parse_utils import partition_list
@@ -29,10 +30,19 @@ For examples, see /examples"""
 
 def get_examples():
     return """Examples:
-    - `index all | filter season(1) type(2) nodecay | count`
-      - Uses the `index` command to switch to the `all` index, which has all matches ever recorded.
-      - Uses the `filter` command with `season(1)` to remove all non-season-1 matches, `type(2)` to only have ranked matches, and `nodecay` to remove all decay matches (which are automatically created when a player experiences ELO decay)
-      - Uses the `count` command to output the resulting number of matches.
+- `index all | filter season(1) type(2) nodecay | count`
+  - Uses the `index` command to switch to the `all` index, which has all matches ever recorded.
+  - Uses the `filter` command with `season(1)` to remove all non-season-1 matches, `type(2)` to only have ranked matches, and `nodecay` to remove all decay matches (which are automatically created when a player experiences ELO decay)
+  - Uses the `count` command to output the resulting number of matches.
+- `index s2 | filter seed_type(shipwreck) | extract timelines | segmentby uuid | drop_list empty | splits.has find_bastion | splits.get find_bastion | sort time`
+  - Uses the `index` command to switch to the `s2` index. sN indexes contain ranked, non-decay, non-cheated matches from season N, starting with s0.
+  - Uses the `filter` command to keep only matches whose seed_type was `shipwreck`.
+  - Uses the `extract` command to extract the timelines from these matches. Our dataset is now 'lists of splits from matches' (instead of 'lists of matches')
+  - Uses the `segmentby` command to split the lists of 'timelines for each match' into lists of 'timelines for each player-match combination'. This is not confusing, trust me :)
+  - Uses the `drop_list empty` command pairing to remove any lists of timelines that are empty. I think this is useless but I left it in, lol.
+  - Uses the `splits.has` command to keep only lists of splits where the list contains a find_bastion split.
+  - Uses the `splits.get` command to extract the `find_bastion` split out of the list. Our dataset is now 'find_bastion splits' (that is, one large list of all find_bastion splits from season 2)
+  - Sorts based on the `time` attribute (which each split object has).
 """
 
 
@@ -193,6 +203,14 @@ class Runtime(Component):
                 vals = localextract(l, attr)
             varlist[name] = vals
             return l
+
+        @Local
+        def localkeepifattrcontained(d: Dataset, attr: str, variable: str):
+            s = set(varlist[variable])
+
+            e = SmartExtractor(d.example(), attr)
+
+            return [x for x in d.l if e(x) in s]
 
         @Local
         def localmetainfo(_):
@@ -392,6 +410,24 @@ class Runtime(Component):
                     f'Average {val}: ' + str((result if 'precise' in args else round(result, 2))))
 
         @Local
+        def localaverageby(l: Dataset, to_average: str, by: str):
+            """
+            `averageby(to_average, by)` - Compute the average value of an attribute across a dataset, by the value of a second attribute.
+            Example: `filter completion | sort duration | take 1000 | averageby duration winner` gets the average time of the top 1000 completions by their winner.
+            """
+            ex = l.example()
+            value_extractor = SmartExtractor(ex, to_average)
+            key_extractor = SmartExtractor(ex, by)
+
+            t = type(value_extractor(ex))
+
+            avg_dict = defaultdict(lambda: list())
+
+            for o in l.l:
+                avg_dict[key_extractor(o)].append(value_extractor(o))
+            return [tuple([k, t(average(v))]) for k, v in avg_dict.items()]
+
+        @Local
         def localcount(l: Dataset):
             """
             `count` - Returns the current dataset size.
@@ -400,6 +436,7 @@ class Runtime(Component):
                 self.add_result(f'Current size: {len(l.l)}')
             else:
                 self.add_result(f'Dataset currently only has one item.')
+            return l
 
         @Local
         def localextract(l: Dataset, *args):

@@ -186,6 +186,8 @@ def format_str(o: object):
                 raise KeyError(f'{o} is not a valid username.')
     if type(o) == Milliseconds:
         return time_fmt(o)
+    if type(o) == list and len(o) < 5:
+        return str([format_str(so) for so in o])
     return str(o)
     # raise RuntimeError(f'Could not convert {type(o)} to formatted result.')
 

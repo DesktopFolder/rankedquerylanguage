@@ -62,6 +62,10 @@ class Timeline:
         self.id: str = timeline['timeline']
         self.uuid: UUID = UUID(timeline['uuid'])
 
+    @staticmethod
+    def from_items(time, id, uuid):
+        return Timeline({'time': time, 'timeline': id, 'uuid': uuid})
+
     def __repr__(self):
         return f'Timeline({self.time}, {self.id}, {self.uuid})'
 

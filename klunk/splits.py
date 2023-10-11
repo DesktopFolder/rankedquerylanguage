@@ -41,6 +41,10 @@ def get_split(l: list[Timeline], split_id: str):
     return None
 
 @Split
+def filter(ds: Dataset, *args):
+    return [[y for y in x if any([split_eq(real=y.id, query=a) for a in args])] for x in ds.l]
+
+@Split
 def has(ds: Dataset, split_id: str):
     return [s for s in ds.l if has_split(s, split_id)]
 
@@ -58,6 +62,27 @@ def get_if(ds: Dataset, split_id: str):
         split = get_split(s, split_id=split_id)
         if split is not None:
             l.append(split)
+    return l
+
+@Split
+def diff(ds: Dataset, split_id_lt: str, split_id_gt: str):
+    """
+    `diff(split_id_lt, split_id_gt)` - compute the time delta between split_id_lt and split_id_gt for each split.
+    All split lists which do not contain both lt & gt will be dropped.
+    """
+    l = list()
+    id_res = f'{split_id_gt}-{split_id_lt}'
+    for s in ds.l:
+        lt = get_split(s, split_id_lt)
+        if lt is None:
+            continue
+        gt = get_split(s, split_id_gt)
+        if gt is None:
+            continue
+        if gt.uuid != lt.uuid:
+            raise RuntimeError(f'UUIDs during diff of {split_id_lt} and {split_id_gt} did not match. Maybe you forgot to segment the lists by uuid.')
+        # Recombine into a weird Timeline... thing.
+        l.append(Timeline.from_items(gt.time - lt.time, id_res, lt.uuid))
     return l
 
 @Split

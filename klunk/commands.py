@@ -60,3 +60,10 @@ def _command_dropn(d: Dataset, val: str):
     `dropn` - drop the first n values.
     """
     return d.l[int(val):]
+
+@Command
+def _command_flatten(d: Dataset):
+    """
+    `flatten` - flattens lists of lists.
+    """
+    return [x for y in d.l for x in y]
