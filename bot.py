@@ -19,12 +19,17 @@ class QueryEngineV2:
     def __init__(self) -> None:
         self.formatter = None
 
+    def clean(self, s: str) -> str:
+        if self.formatter is not None:
+            return self.formatter["clean"](s)
+        return s
+
     def run(self, query: str, debug: bool=False, timing: bool=False, is_bot: bool=False):
         sb = sandbox.Query(query, debug, timing, self.formatter)
 
         def format_result(s: str):
             if is_bot and sb.runtime and sb.runtime.notes:
-                fmt_notes = "\n".join([f'Note: {note}' for note in sb.runtime.notes])
+                fmt_notes = "\n".join([f'Note: {self.clean(note)}' for note in sb.runtime.notes])
                 return f'{fmt_notes}\n{s}'
             return s
         try:
@@ -94,7 +99,8 @@ DiscordFormatter = {
     "underline": lambda s: f'__{s}__',
     "strike": lambda s: f'~{s}~',
     "doc": lambda s: '```\n' + ' '.join([x.strip() for x in s.split('\n') if x.strip() is not None]) + '\n```',
-    "username": lambda s: s.replace('_', '\\_')
+    "username": lambda s: s.replace('_', '\\_'),
+    "clean": lambda s: s.replace('_', '\\_')
 }
 
 
