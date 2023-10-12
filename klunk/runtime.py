@@ -192,6 +192,23 @@ class Runtime(Component):
             self.add_result(f'Args: {args}, kwargs: {kwargs}')
 
         @Local
+        def localmakelist(_, name: str, item_type: str, *args):
+            """
+            `makelist(name, item_type, items...)` - create a list variable.
+            Supported types: str, int.
+            """
+            def convert_int(i: str):
+                if i.isdecimal(): # safest way to do conversions
+                    return int(i)
+                raise RuntimeError(f'Could not convert {i} to integer.')
+            lc = {'str': lambda x: x, 'int': convert_int}
+            if item_type not in lc:
+                raise RuntimeError(f'{item_type} is not a valid conversion type. Valid conversion types: {list(lc.keys())}')
+            conv = lc[item_type]
+            varlist[name] = [conv(a) for a in args]
+            # don't return anything - keep current setup.
+
+        @Local
         def localassign(l: Dataset, name: str, attr: str|None = None):
             """
             `assign` - assign to a variable whose name is provided by the first parameter.
