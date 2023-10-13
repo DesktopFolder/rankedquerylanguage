@@ -112,7 +112,7 @@ async def on_ready():
         print(f'Logged in as {client.user} (ID: {client.user.id})')
 
 
-async def run_discord_query(interaction: discord.Interaction, query: str):
+async def run_discord_query(interaction: discord.Interaction, query: str, notes=None):
     # COC-PYWRITE
     # also doc the above lol 
     # also, check how to remove/rename commands...
@@ -120,6 +120,7 @@ async def run_discord_query(interaction: discord.Interaction, query: str):
     await interaction.response.defer(ephemeral = False, thinking = True)
     resp = qe.run(query, False, False, True)
     print('Bot finished running query:', query)
+    notes = '' if notes is None else '\n' + '\nNote: '.join(notes)
     try:
         if type(resp) is list:
             # Attempt string conversion. LOL this might be a bad idea.
@@ -133,13 +134,13 @@ async def run_discord_query(interaction: discord.Interaction, query: str):
                     await interaction.followup.send(f'From query: `{query}`: Failed to upload, too large (>2gb)')
                     return
             s = s.encode("utf-8")
-            await interaction.followup.send(f'From query: `{query}`', file=discord.File(BytesIO(s), "result.txt"))
+            await interaction.followup.send(f'From query: `{query}`{notes}', file=discord.File(BytesIO(s), "result.txt"))
         else:
             s = str(resp)
             if len(s) > 2000:
                 await interaction.followup.send(f'Your query has a result size of {len(s)} characters, which is too long. Try with +asfile| at the start.')
             else:
-                await interaction.followup.send(f'From query: `{query}`:\n{resp}')
+                await interaction.followup.send(f'From query: `{query}`:{notes}\n{resp}')
     except Exception as e:
         print(f'Failed to send response to /query - likely it took too long: {e}.')
 
@@ -157,7 +158,15 @@ async def average_completion(interaction: discord.Interaction, username: str):
     query='Your Ranked query string. See #docs for details.',
 )
 async def query(interaction: discord.Interaction, query: str):
-    await run_discord_query(interaction, query)
+    # Lint level one: Query level.
+    import re
+    lints = [(r'players\s*|\s*filter\s*nick\([\w\s]*\)\s*|\s*extract (nick )?average_completion', 'Your query seems to compute the average completion of a player - FYI, /average_completion has been added to simplify this.')]
+    notes = None
+    for rxp, res in lints:
+        if re.match(rxp, query) is not None:
+            notes = notes or list()
+            notes.append(res)
+    await run_discord_query(interaction, query, notes)
 
 
 if __name__ == '__main__':
