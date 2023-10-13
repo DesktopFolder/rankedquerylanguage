@@ -112,11 +112,7 @@ async def on_ready():
         print(f'Logged in as {client.user} (ID: {client.user.id})')
 
 
-@client.tree.command()
-@app_commands.describe(
-    query='Your Ranked query string. See #docs for details.',
-)
-async def query(interaction: discord.Interaction, query: str):
+async def run_discord_query(interaction: discord.Interaction, query: str):
     # COC-PYWRITE
     # also doc the above lol 
     # also, check how to remove/rename commands...
@@ -146,6 +142,22 @@ async def query(interaction: discord.Interaction, query: str):
                 await interaction.followup.send(f'From query: `{query}`:\n{resp}')
     except Exception as e:
         print(f'Failed to send response to /query - likely it took too long: {e}.')
+
+
+@client.tree.command()
+@app_commands.describe(
+    username='The CASE-SENSITIVE username of the player to get a current-season average completion time for.'
+)
+async def average_completion(interaction: discord.Interaction, username: str):
+    await run_discord_query(interaction, f'players | filter nick({username}) | extract nick average_completion')
+
+
+@client.tree.command()
+@app_commands.describe(
+    query='Your Ranked query string. See #docs for details.',
+)
+async def query(interaction: discord.Interaction, query: str):
+    await run_discord_query(interaction, query)
 
 
 if __name__ == '__main__':

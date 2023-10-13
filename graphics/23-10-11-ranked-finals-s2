@@ -36,6 +36,9 @@ avg: 2:06
 
 buried_treasure / splits.get_if smelt_iron
 
+silverrruns 0:00:15 * reset removed
+lowk3y_ 0:00:20
+
 avg: 29s
 
 ==============
@@ -65,5 +68,8 @@ silverrruns 0:02:11
 avg: 2:15
 
 shipwreck / splits.diff lava_bucket nether.root
+
+lowk3y_ 0:00:16
+silverrruns 0:00:18
 
 avg: 18s
