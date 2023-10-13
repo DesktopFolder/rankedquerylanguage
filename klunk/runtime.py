@@ -567,6 +567,27 @@ class Runtime(Component):
             self.add_result(', '.join(inf))
 
         @Local
+        def localdrop_outliers(d: Dataset, attr: str, factor: str = '4', method = 'diff'):
+            """
+            drop_high_outliers(attribute, factor=4, method=diff) - drop outliers that are factor* higher than the average
+            """
+            e = SmartExtractor(d.example(), attr)
+            avg = average([e(x) for x in d.l])
+            if not factor.isdecimal():
+                raise TypeError(f'Factor of {factor} is not an integer number.')
+            high_limit = avg + (int(factor) * avg)
+            low_limit = avg - (int(factor) * avg)
+            methods = {
+                'diff': lambda v: v < high_limit and v > low_limit,
+                'gt': lambda v: v < high_limit,
+                'lt': lambda v: v > low_limit,
+            }
+            if method not in methods:
+                raise ValueError(f'Method {method} is not a valid method, see valid methods: {list(methods.values())}')
+            method = methods[method]
+            return [x for x in d.l if method(e(x))]
+
+        @Local
         def localdrop_list(d: Dataset, value: str):
             if value == 'empty':
                 return d.clone([x for x in d.l if len(x) != 0])
@@ -586,6 +607,8 @@ class Runtime(Component):
                     value = None
                 elif value[0] == 'lt':
                     return [x for x in d.l if x.extract(attribute) >= int(value[1])]
+                elif value[0] == 'gt':
+                    return [x for x in d.l if x.extract(attribute) <= int(value[1])]
                 elif value[0] == 'anylt':
                     a, b = attribute.split('.')
                     return [x for x in d.l if all([y.extract(b) >= int(value[1]) for y in x.extract(a)])]

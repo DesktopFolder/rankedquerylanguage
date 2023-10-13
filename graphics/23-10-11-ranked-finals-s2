@@ -6,3 +6,64 @@ grab these real quick...
 ```
 +asfile | index s2 | players | rsort elo | take 50 | assign TOP50 uuid | index s2 | extract timelines | segmentby uuid | splits.diff lava_bucket nether.root | keepifattrcontained uuid TOP50 | averageby time uuid
 ```
+
+General Query:
+```
++asfile | index s2 | players | rsort elo | take 50 | assign TOP50 uuid | index s2 | filter seed_type(PARAM) | extract timelines | segmentby uuid | PARAM2 | keepifattrcontained uuid TOP50 | drop time lt(0) | average time
+```
+
+==============
+#1: PARAM(village) PARAM2(splits.get_if nether.root)
+
+1&6: 553849 553972
+
+index all | makelist ids int 553972 553849 | keepifattrcontained id ids | extract timelines | segmentby uuid | splits.get nether.root | averageby time uuid
+
+silverrruns 0:02:27
+lowk3y_ 0:02:05
+
+avg: 2:28
+
+==============
+#2: buried_treasure / splits.get_if nether.root
+
+2&5&7: 553871 553956 553997
+
+silverrruns 0:01:30
+lowk3y_ 0:01:23
+
+avg: 2:06
+
+buried_treasure / splits.get_if smelt_iron
+
+avg: 29s
+
+==============
+#3: ruined_portal / splits.get_if nether.root
+
+3: 553903
+
+silverrruns 0:01:08
+lowk3y_ 0:01:36
+
+avg: 1:30
+
+ruined_portal / splits.diff smelt_iron iron_tools
+
+avg: 33
+
+==============
+#4: shipwreck / splits.get_if nether.root
+
+4: 553924
+
+index all | makelist ids int 553924 | keepifattrcontained id ids | extract timelines | segmentby uuid | splits.get nether.root | averageby time uuid
+
+lowk3y_ 0:02:24
+silverrruns 0:02:11
+
+avg: 2:15
+
+shipwreck / splits.diff lava_bucket nether.root
+
+avg: 18s
