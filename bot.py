@@ -160,7 +160,7 @@ async def average_completion(interaction: discord.Interaction, username: str):
 async def query(interaction: discord.Interaction, query: str):
     # Lint level one: Query level.
     import re
-    lints = [(r'players\s*|\s*filter\s*nick\([\w\s]*\)\s*|\s*extract (nick )?average_completion\s*$', 'Your query seems to compute the average completion of a player - FYI, /average_completion has been added to simplify this.')]
+    lints = [(r'players\s*|\s*filter\s*nick\([\w\s]*\)\s*|\s*extract (nick )?average_completion\s*$', '*Note: /average\\_completion has been added to simplify this.*')]
     notes = None
     for rxp, res in lints:
         if re.match(rxp, query) is not None:
