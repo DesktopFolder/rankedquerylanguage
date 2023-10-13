@@ -223,6 +223,8 @@ class Runtime(Component):
 
         @Local
         def localkeepifattrcontained(d: Dataset, attr: str, variable: str):
+            if variable not in varlist:
+                raise RuntimeError(f'Variable name {variable} does not exist. For a list, see `vars`.')
             s = set(varlist[variable])
 
             e = SmartExtractor(d.example(), attr)
@@ -696,7 +698,7 @@ class Runtime(Component):
                     self.log(
                         f'Applied filter {filt} and got {len(res)} resulting objects (from {preres}).')
                     if not res:
-                        raise RuntimeError(f'Empty dataset after applying filter: {filt}. Note that filter parameters are case sensitive, so `filter(desktopfolder)` is NOT the same as `filter(DesktopFolder)`.')
+                        raise RuntimeError(f'Empty dataset after applying filter: {filt}. Note that filter parameters are case sensitive, so `filter nick(desktopfolder)` is NOT the same as `filter nick(DesktopFolder)`.')
                         # return l.clone(f'Empty dataset after applying filter: {filt}')
                 else:
                     raise RuntimeError(

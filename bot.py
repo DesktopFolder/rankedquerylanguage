@@ -121,6 +121,7 @@ async def query(interaction: discord.Interaction, query: str):
     # also doc the above lol 
     # also, check how to remove/rename commands...
     print('Running query:', query)
+    await interaction.defer(ephemeral = False, thinking = True)
     resp = qe.run(query, False, False, True)
     print('Bot finished running query:', query)
     try:
@@ -137,7 +138,11 @@ async def query(interaction: discord.Interaction, query: str):
             s = s.encode("utf-8")
             await interaction.response.send_message(f'From query: `{query}`', file=discord.File(BytesIO(s), "result.txt"))
         else:
-            await interaction.response.send_message(f'From query: `{query}`:\n{resp}')
+            s = str(resp)
+            if len(s) > 2000:
+                await interaction.response.send_message(f'Your query has a result size of {len(s)} characters, which is too long. Try with +asfile| at the start.')
+            else:
+                await interaction.response.send_message(f'From query: `{query}`:\n{resp}')
     except:
         print('Failed to send response to /query - likely it took too long.')
 

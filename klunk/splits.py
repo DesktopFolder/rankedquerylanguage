@@ -46,6 +46,9 @@ def filter(ds: Dataset, *args):
 
 @Split
 def has(ds: Dataset, split_id: str):
+    """
+    has(split_id) - todo - support multiple ids
+    """
     return [s for s in ds.l if has_split(s, split_id)]
 
 @Split

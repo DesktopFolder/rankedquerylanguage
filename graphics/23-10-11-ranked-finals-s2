@@ -2,3 +2,7 @@ http://mcsrranked.com/api/users/lowk3y_/matches
 grab these real quick...
 
 553997 553972 553956 553924 553903 553871 553849
+
+```
++asfile | index s2 | players | rsort elo | take 50 | assign TOP50 uuid | index s2 | extract timelines | segmentby uuid | splits.diff lava_bucket nether.root | keepifattrcontained uuid TOP50 | averageby time uuid
+```
