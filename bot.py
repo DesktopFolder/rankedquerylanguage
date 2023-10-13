@@ -121,7 +121,7 @@ async def query(interaction: discord.Interaction, query: str):
     # also doc the above lol 
     # also, check how to remove/rename commands...
     print('Running query:', query)
-    await interaction.defer(ephemeral = False, thinking = True)
+    await interaction.response.defer(ephemeral = False, thinking = True)
     resp = qe.run(query, False, False, True)
     print('Bot finished running query:', query)
     try:
