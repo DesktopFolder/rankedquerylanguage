@@ -134,17 +134,18 @@ async def query(interaction: discord.Interaction, query: str):
                 s += dataset.format_str(l)
                 s += '\n'
                 if len(s) > one_gb:
-                    await interaction.response.send_message(f'From query: `{query}`: Failed to upload, too large (>2gb)')
+                    await interaction.followup.send(f'From query: `{query}`: Failed to upload, too large (>2gb)')
+                    return
             s = s.encode("utf-8")
-            await interaction.response.send_message(f'From query: `{query}`', file=discord.File(BytesIO(s), "result.txt"))
+            await interaction.followup.send(f'From query: `{query}`', file=discord.File(BytesIO(s), "result.txt"))
         else:
             s = str(resp)
             if len(s) > 2000:
-                await interaction.response.send_message(f'Your query has a result size of {len(s)} characters, which is too long. Try with +asfile| at the start.')
+                await interaction.followup.send(f'Your query has a result size of {len(s)} characters, which is too long. Try with +asfile| at the start.')
             else:
-                await interaction.response.send_message(f'From query: `{query}`:\n{resp}')
-    except:
-        print('Failed to send response to /query - likely it took too long.')
+                await interaction.followup.send(f'From query: `{query}`:\n{resp}')
+    except Exception as e:
+        print(f'Failed to send response to /query - likely it took too long: {e}.')
 
 
 if __name__ == '__main__':
