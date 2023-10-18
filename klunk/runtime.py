@@ -255,6 +255,8 @@ class Runtime(Component):
             self.log(f"Changing dataset to {name}")
             if name.startswith('s') and name[1:].isdecimal():
                 return localfilter(localindex(None, 'most'), ('season', name.lstrip('s')))
+            if name == 'all':
+                self.add_result(f'*Warning: Dataset `all` contains* ***all*** *matches, including decay matches, unranked matches, and cheated matches. `index most` only contains legitimate, ranked, non-decay matches.*')
             if not name in self.datasets:
                 raise RuntimeError(f'{name} is not a valid dataset name.')
             return self.datasets[name]

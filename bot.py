@@ -9,6 +9,8 @@ from io import BytesIO
 from klunk import sandbox
 from klunk.language import ParseError
 
+ONE_TIME = True
+
 MY_GUILD = discord.Object(id=1133544816563716250)  # replace with your guild id
 try:
     token = open('token.txt').read().strip()
@@ -158,6 +160,11 @@ async def average_completion(interaction: discord.Interaction, username: str):
     query='Your Ranked query string. See #docs for details.',
 )
 async def query(interaction: discord.Interaction, query: str):
+    global ONE_TIME
+    if ONE_TIME:
+        ONE_TIME = False
+        # can't do anything actually useful with this... lol
+        await client.change_presence(status=discord.Status.online)
     # Lint level one: Query level.
     import re
     lints = [(r'players\s*|\s*filter\s*nick\([\w\s]*\)\s*|\s*extract (nick )?average_completion\s*$', '*Note: /average\\_completion has been added to simplify this.*')]
