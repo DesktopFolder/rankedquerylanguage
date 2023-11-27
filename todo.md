@@ -2,6 +2,7 @@
 - dumpjson
 - raw
 - whatever fulhamn needed idk
+- `output` -> `output file`, `output graph`, etc
 
 - make commands a separate object etc (commandctx) @Command(t=list)
 - live update
