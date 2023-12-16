@@ -418,10 +418,11 @@ class Runtime(Component):
             data = l.l
             if not data:
                 return self.add_result(f'Dataset was empty; no average calculable.')
-            example = data[0].extract(val)
+            extractor = SmartExtractor(data[0], val)
+            example = extractor(data[0])
             if type(example) not in [int, Milliseconds, Seconds, float]:
                 return self.add_result(f'Could not average type {type(example)}.')
-            result = average([x.extract(val) for x in data])
+            result = average([extractor(x) for x in data])
             if 'time' in args or type(example) in [Milliseconds, Seconds]:
                 tf = time_fmt(result, type(example)
                               is Seconds or 'seconds' in args)
@@ -512,10 +513,11 @@ class Runtime(Component):
             """
             l = float(min_val)
             u = float(max_val)
+            extractor = SmartExtractor(d.example(), attribute)
 
             def is_between(v):
                 return v >= l and v <= u
-            return [x for x in d.l if is_between(float(x.extract(attribute)))]
+            return [x for x in d.l if is_between(float(extractor(x)))]
 
         def getslots(e: Any):
             if hasattr(e, '__slots__'):
@@ -603,21 +605,21 @@ class Runtime(Component):
             This is also a temporary solution for filter not being powerful enough.
             Later, it will be possible to just do `filter winner(not(desktopfolder))`
             """
-            extractor = SmartExtractor(d.l[0], attribute)
+            extractor = SmartExtractor(d.example(), attribute)
             if type(value) is tuple:
                 if value[0] == 'None':
                     value = None
                 elif value[0] == 'lt':
-                    return [x for x in d.l if x.extract(attribute) >= int(value[1])]
+                    return [x for x in d.l if extractor(x) >= int(value[1])]
                 elif value[0] == 'gt':
-                    return [x for x in d.l if x.extract(attribute) <= int(value[1])]
+                    return [x for x in d.l if extractor(x) <= int(value[1])]
                 elif value[0] == 'anylt':
                     a, b = attribute.split('.')
-                    return [x for x in d.l if all([y.extract(b) >= int(value[1]) for y in x.extract(a)])]
+                    return [x for x in d.l if all([y.extract(b) >= int(value[1]) for y in extractor(x)])]
                 elif value[0] == 'test_winner_lower':
                     # lol, ok, whatever, language dev later sometime ig
                     return [m for m in d.l if type(m) == QueryMatch and not m.rql_is_draw() and (m.rql_loser().elo > m.rql_winner().elo)]
-            return [x for x in d.l if x.extract(attribute) != value]
+            return [x for x in d.l if extractor(x) != value]
 
         @Local
         def localtest_list(d: Dataset, attribute, operation, destination=None):
