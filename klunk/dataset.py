@@ -270,15 +270,16 @@ def GetUserMappings(l: list[QueryMatch]):
     users['drawn match'] = '__draw'
     return uuids, users
 
-def load_defaults(p: str, quiet = False, set_discord = False):
+def load_defaults(p: str, quiet = False, set_discord = False, no_mq =False):
     global __discord
     if set_discord:
         __discord = True
     global _datasets_
     if _datasets_ is None:
-        print('Starting RabbitMQ consumer.')
-        _mq_.start_consuming()
-        print('Finished loading RabbitMQ consumer.')
+        if not no_mq:
+            print('Starting RabbitMQ consumer.')
+            _mq_.start_consuming()
+            print('Finished loading RabbitMQ consumer.')
         l = load_raw_matches(p, quiet)
         uuids, users = GetUserMappings(l)
         _datasets_ = {
@@ -289,7 +290,8 @@ def load_defaults(p: str, quiet = False, set_discord = False):
             "__users": Dataset("Users", users),
         }
 
-    # first, pull new matches from rmq
-    _mq_.update_datasets()
+    if not no_mq:
+        # first, pull new matches from rmq
+        _mq_.update_datasets()
 
     return _datasets_

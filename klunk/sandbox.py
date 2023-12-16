@@ -3,10 +3,11 @@ from .runtime import Runtime
 from .dataset import load_defaults
 
 class Query(Component):
-    def __init__(self, query: str, debug = False, timing = False, formatter=None):
+    def __init__(self, query: str, debug = False, timing = False, formatter=None, no_mq=False):
         super().__init__("SandboxedQuery")
         self.debug = debug
         self._timing = timing
+        self.no_mq = no_mq
         self.query = query
         self.compiler = Compiler()
         self.tokenizer = Tokenizer()
@@ -29,7 +30,7 @@ class Query(Component):
             loc = "klunk/samples/"
 
         # Now construct the runtime, for which we need to load samples, etc.
-        datasets = load_defaults(loc, quiet = not debug, set_discord = set_discord)
+        datasets = load_defaults(loc, quiet = not debug, set_discord = set_discord, no_mq=self.no_mq)
         return datasets
 
     def run(self):

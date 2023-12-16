@@ -673,6 +673,14 @@ class Runtime(Component):
                 raise RuntimeError(f'Unsupported operation: {operation}')
 
         @Local
+        def localfilter2(l: Dataset, *args):
+            """
+            `filter2(...)` - Just DesktopFolder testing things out. Language probably
+            needs better parsing at a lower level but this will do a few things for now.
+            """
+            pass
+
+        @Local
         def localfilter(l: Dataset, *args):
             """
             `filter(...)` - Filters the input dataset based on 1 or more filter arguments.
@@ -704,8 +712,20 @@ class Runtime(Component):
                     # Let's be smart about this. Get our desired destination type for conversion.
                     # Is that smart? Whatever, this is a query language built in Python, anyways.
                     first = res[0]
+                    # varname(desired)
+                    # e.g. player(john)
                     varname, desired = filt
                     example = first.extract(varname)
+
+                    def filter_function(li: Any) -> bool:
+                        return li.extract(varname) == desired
+
+                    if type(example) is list:
+                        if len(example):
+                            example = example[0]
+                        def filter_function(li: Any) -> bool:
+                            return desired in li.extract(varname)
+
                     if type(example) is bool:
                         desired = parse_boolean(desired)
                     elif type(example) is UUID:
@@ -718,8 +738,12 @@ class Runtime(Component):
                             desired = None
                     elif type(example) is int:
                         desired = int(desired)
+                    #elif callable(example):
+                    #    def filter_function(li: Any) -> bool:
+                    #        return li.extract(varname)(desired)
+
                     preres = len(res)
-                    res = [m for m in res if m.extract(varname) == desired]
+                    res = [m for m in res if filter_function(m)]
                     self.log(
                         f'Applied filter {filt} and got {len(res)} resulting objects (from {preres}).')
                     if not res:

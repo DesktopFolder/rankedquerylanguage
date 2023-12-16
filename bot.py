@@ -26,8 +26,8 @@ class QueryEngineV2:
             return self.formatter["clean"](s)
         return s
 
-    def run(self, query: str, debug: bool=False, timing: bool=False, is_bot: bool=False):
-        sb = sandbox.Query(query, debug, timing, self.formatter)
+    def run(self, query: str, debug: bool=False, timing: bool=False, is_bot: bool=False, no_mq: bool=False):
+        sb = sandbox.Query(query, debug, timing, self.formatter, no_mq=no_mq)
 
         def format_result(s: str):
             if is_bot and sb.runtime and sb.runtime.notes:
@@ -197,7 +197,7 @@ if __name__ == '__main__':
                 elif x == '-debug':
                     db = False
                 else:
-                    print(qe.run(x, db))
+                    print(qe.run(x, db, no_mq=True))
             except EOFError:
                 break
     else:
