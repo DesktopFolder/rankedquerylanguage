@@ -45,6 +45,9 @@ class MatchMember:
     def extract(self, attribute):
         return _extract(self, attribute)
 
+    def __str__(self):
+        return f'{self.user}'
+
     def __getitem__(self, attribute):
         return self.extract(attribute)
 
@@ -94,6 +97,16 @@ class UUIDList(list):
         # Extract is our magic method.
         # We do this abstraction to allow for future changes.
         return _lextract(self, key)
+
+    def basic_repr(self):
+        return ''.join(sorted([m.uuid for m in self]))
+
+    def __eq__(self, other):
+        # We care if the list is 'relevantly same' for now
+        return self.basic_repr() == other.basic_repr()
+
+    def __hash__(self):
+        return hash(self.basic_repr())
 
 class TimelineList(list):
     def __init__(self, *args, **kwargs):

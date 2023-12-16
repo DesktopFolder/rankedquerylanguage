@@ -166,16 +166,12 @@ def to_idx(s: str, l: list[QueryMatch], cs=None) -> list[QueryMatch]:
 def format_str(o: object):
     if o is None:
         return '<None>'
-    if type(o) == QueryMatch:
-        return str(o)
     if type(o) == tuple:
         return ' '.join([format_str(v) for v in o])
     if type(o) == Timeline:
         return format_str(tuple([o.uuid, o.id, o.time]))
     if type(o) == str:
         return o
-    if type(o) == Player:
-        return str(o)
     if type(o) == UUID:
         if _datasets_ is not None:
             try:
@@ -186,7 +182,7 @@ def format_str(o: object):
                 raise KeyError(f'{o} is not a valid username.')
     if type(o) == Milliseconds:
         return time_fmt(o)
-    if type(o) == list and len(o) < 5:
+    if isinstance(o, list) and len(o) < 5:
         return str([format_str(so) for so in o])
     return str(o)
     # raise RuntimeError(f'Could not convert {type(o)} to formatted result.')
@@ -231,7 +227,7 @@ class Dataset:
         val = self.l
         if type(val) == dict:
             val = list(val.items())
-        if type(val) == list:
+        if isinstance(val, list):
             length = len(val)
             if length == 1:
                 return format_str(val[0])
