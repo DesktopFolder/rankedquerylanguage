@@ -173,6 +173,26 @@ async def qb_info(interaction: discord.Interaction):
 
 
 @client.tree.command()
+@app_commands.choices(value=[
+    app_commands.Choice(name="Fastest Completions", value="pb"),
+    app_commands.Choice(name="Elo", value="elo"),
+])
+@app_commands.describe(
+    value='The type of leaderboard you want to generate.'
+)
+async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.Choice[str]):
+    leaderboard_queries = {
+        'pb': 'filter noff | drop duration lt(332324) | sort duration | take 10 | extract id date winner duration',
+        'elo': 'players | drop elo None() | rsort elo | take 10',
+    }
+    v = value.value
+    if v not in leaderboard_queries:
+        await interaction.response.send_message(f'Your value of {v} is not a valid choice.')
+    else:
+        await run_discord_query(interaction, leaderboard_queries[value.value])
+
+
+@client.tree.command()
 @app_commands.describe(
     query='Your Ranked query string. See #docs for details.',
 )
