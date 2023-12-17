@@ -248,6 +248,19 @@ class Dataset:
                 return None
         return self.l
 
+class UUIDDataset:
+    def __init__(self, users_to_uuids: Dataset, uuids_to_users: Dataset) -> None:
+        self.users_to_uuids = users_to_uuids.l
+        self.uuids_to_users = uuids_to_users.l
+
+    def convert_uuid(self, uuid: UUID) -> str:
+        # Convert a UUID into a nickname string.
+        return self.uuids_to_users[uuid]
+
+    def convert_user(self, user: str) -> UUID:
+        # Convert a username into a UUID string.
+        return self.users_to_uuids[user.lower()]
+
 def AsDefaultDatalist(l: list[QueryMatch], current_season: int):
     return to_idx('ranked.current.nodecay', l, current_season)
 

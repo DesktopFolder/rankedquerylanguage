@@ -149,10 +149,10 @@ async def run_discord_query(interaction: discord.Interaction, query: str, notes=
 
 @client.tree.command()
 @app_commands.describe(
-    username='The CASE-SENSITIVE username of the player to get a current-season average completion time for.'
+    username='The case-insensitive username of the player to get a current-season average completion time for.'
 )
 async def average_completion(interaction: discord.Interaction, username: str):
-    await run_discord_query(interaction, f'players | filter nick({username}) | extract nick average_completion')
+    await run_discord_query(interaction, f'players | filter uuid({username}) | extract nick average_completion')
 
 
 @client.tree.command()
@@ -167,7 +167,7 @@ async def query(interaction: discord.Interaction, query: str):
         await client.change_presence(status=discord.Status.online)
     # Lint level one: Query level.
     import re
-    lints = [(r'players\s*|\s*filter\s*nick\([\w\s]*\)\s*|\s*extract (nick )?average_completion\s*$', '*Note: /average\\_completion has been added to simplify this.*')]
+    lints = [(r'players\s*\|\s*filter\s*nick\([\w\s]*\)\s*\|\s*extract (nick )?average_completion\s*$', '*Note: /average\\_completion has been added to simplify this.*')]
     notes = None
     for rxp, res in lints:
         if re.match(rxp, query) is not None:

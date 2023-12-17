@@ -4,7 +4,7 @@ from .match import QueryMatch
 from .parse_utils import partition_list
 from .component import Component
 from .expression import Expression
-from .dataset import SUPPORTED_ITERABLES, Dataset
+from .dataset import SUPPORTED_ITERABLES, Dataset, UUIDDataset
 from typing import Callable, Any
 from . import commands, jobs, splits
 from .players import MatchPlayer, PlayerManager
@@ -134,6 +134,7 @@ class Runtime(Component):
         super().__init__("Runtime")
 
         self.datasets = datasets
+        self.user_dataset = UUIDDataset(self.datasets['__users'], self.datasets['__uuids'])
         self.commands = commands
         self.formatter = formatter
         self.notes = list()
@@ -732,8 +733,7 @@ class Runtime(Component):
                         desired = parse_boolean(desired)
                     elif type(example) is UUID:
                         try:
-                            desired = self.datasets["__users"].l[desired.lower(
-                            )]
+                            desired = self.user_dataset.convert_user(desired)
                         except KeyError:
                             self.notes.append(
                                 f'{desired} is not a known username.')
@@ -749,7 +749,7 @@ class Runtime(Component):
                     self.log(
                         f'Applied filter {filt} and got {len(res)} resulting objects (from {preres}).')
                     if not res:
-                        raise RuntimeError(f'Empty dataset after applying filter: {filt}. Note that filter parameters are case sensitive, so `filter nick(desktopfolder)` is NOT the same as `filter nick(DesktopFolder)`.')
+                        raise RuntimeError(f'Empty dataset after applying filter: {filt}. This can indicate the wrong attribute is being filtered on, or that the value being searched for is wrong, or just that there are no results that match your query.')
                         # return l.clone(f'Empty dataset after applying filter: {filt}')
                 else:
                     raise RuntimeError(
