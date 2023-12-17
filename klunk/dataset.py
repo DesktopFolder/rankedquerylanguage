@@ -1,4 +1,4 @@
-from klunk.extra_types import UUID, Milliseconds
+from klunk.extra_types import UUID, Milliseconds, Seconds
 from klunk.utils import time_fmt
 from .match import MatchMember, QueryMatch, Timeline, TimelineList, from_json_string
 from .filters import *
@@ -183,6 +183,8 @@ def format_str(o: object):
                 raise KeyError(f'{o} is not a valid username.')
     if type(o) == Milliseconds:
         return time_fmt(o)
+    if type(o) == Seconds and __discord:
+        return f'<t:{o}:R>'
     if isinstance(o, list) and len(o) < 5:
         return str([format_str(so) for so in o])
     return str(o)
