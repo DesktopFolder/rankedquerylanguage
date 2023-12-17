@@ -44,6 +44,7 @@ class PikaConnection:
         try:
             assert self.connection is not None
             self.connection.process_data_events(0)
+            self.connection.sleep(0.1)
         except:
             if itr > 4:
                 self.broken = True

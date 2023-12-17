@@ -154,6 +154,23 @@ async def run_discord_query(interaction: discord.Interaction, query: str, notes=
 async def average_completion(interaction: discord.Interaction, username: str):
     await run_discord_query(interaction, f'players | filter uuid({username}) | extract nick average_completion')
 
+@client.tree.command()
+async def qb_info(interaction: discord.Interaction):
+    # First just make sure we don't time out with the interaction.
+    await interaction.response.defer(ephemeral = False, thinking = True)
+
+    from klunk.dataset import load_defaults
+    loc = open('location.txt').read().strip()
+    data = load_defaults(loc, quiet=True, set_discord=True)
+    latest = data["most"].l[-1]
+    datasets = ', '.join([x for x in data.keys() if not x.startswith('__')])
+
+    # Compose the response.
+    s = f'QueryBot active.\nExplicit datasets loaded: {datasets}'
+    s += f'\nMost recent match loaded: {latest} (<t:{latest.date}:R>)'
+
+    await interaction.followup.send(s)
+
 
 @client.tree.command()
 @app_commands.describe(
