@@ -179,9 +179,10 @@ async def qb_info(interaction: discord.Interaction):
     app_commands.Choice(name="Average Completion", value="average_completion"),
 ])
 @app_commands.describe(
-    value='The type of leaderboard you want to generate.'
+    value='The type of leaderboard you want to generate.',
+    season='The season to generate a leaderboard for. By default, the current season.',
 )
-async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.Choice[str]):
+async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.Choice[str], season: int|None = None):
     leaderboard_queries = {
         'pb': 'filter noff | drop duration lt(332324) | sort duration | take 10 | extract id date winner duration',
         'elo': 'players | drop elo None() | rsort elo | take 10',
@@ -191,7 +192,10 @@ async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.C
     if v not in leaderboard_queries:
         await interaction.response.send_message(f'Your value of {v} is not a valid choice.')
     else:
-        await run_discord_query(interaction, leaderboard_queries[value.value])
+        query = leaderboard_queries[value.value]
+        if season is not None:
+            query = f'index s{season} | {query}'
+        await run_discord_query(interaction, query)
 
 
 @client.tree.command()
