@@ -218,9 +218,8 @@ class QueryMatch:
         self.is_abnormal = False
         # Checking for abnormal matches.
         # Mainly, there are non-ff matches that have 0 duration.
-        if self.rql_completed() and self.duration < ABNORMAL_MATCH_MS and self.season < 2:
-            # I think cheating has been mostly fixed.
-            # I guess we'll see.
+        if self.rql_completed() and self.duration < ABNORMAL_MATCH_MS:
+            # No cheated matches in S2 but there are in S3, so. 
             self.is_abnormal = True
 
         # Feature checks

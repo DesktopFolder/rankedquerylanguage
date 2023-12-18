@@ -176,6 +176,7 @@ async def qb_info(interaction: discord.Interaction):
 @app_commands.choices(value=[
     app_commands.Choice(name="Fastest Completions", value="pb"),
     app_commands.Choice(name="Elo", value="elo"),
+    app_commands.Choice(name="Average Completion", value="average_completion"),
 ])
 @app_commands.describe(
     value='The type of leaderboard you want to generate.'
@@ -184,6 +185,7 @@ async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.C
     leaderboard_queries = {
         'pb': 'filter noff | drop duration lt(332324) | sort duration | take 10 | extract id date winner duration',
         'elo': 'players | drop elo None() | rsort elo | take 10',
+        'average_completion': 'players | drop average_completion None() | sort average_completion | take 10 | extract nick average_completion match_completions',
     }
     v = value.value
     if v not in leaderboard_queries:
