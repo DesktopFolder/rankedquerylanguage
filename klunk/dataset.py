@@ -265,7 +265,7 @@ class UUIDDataset:
         return self.users_to_uuids[user.lower()]
 
 def AsDefaultDatalist(l: list[QueryMatch], current_season: int):
-    return to_idx('ranked.current.nodecay', l, current_season)
+    return to_idx('ranked.current.nodecay.noabnormal', l, current_season)
 
 def AsMostDatalist(l: list[QueryMatch]):
     return to_idx('ranked.nodecay.noabnormal', l)
