@@ -46,34 +46,53 @@ def get_examples():
 """
 
 
-def SmartExtractor(ex, v):
+def BasicExtractor(ex, v):
     # Creates and returns a smart extractor for ex
+
+    # Does it have .extract()?
     try:
-        ex.extract(v)
+        example = ex.extract(v)
 
         def getter(o):
             return o.extract(v)
-        return getter
+        return getter, example
     except:
         pass
+
+    # Does it have __getitem__(T)?
     try:
-        _ = ex[v]
+        example = ex[v]
 
         def getter(o):
             return o[v]
-        return getter
+        return getter, example
     except:
         pass
+
+    # Does it have __getitem__(int)?
     try:
-        _ = ex[0]
+        example = ex[0]
 
         def getter(o):
             return o[int(v)]
-        return getter
+        return getter, example
     except:
         pass
+
+    # :(
     raise RuntimeError(
         f'Could not find a way to extract {v} from {type(ex)}. Try | attrs.')
+
+
+
+def SmartExtractor(ex, v, *args):
+    # Creates and returns a smart extractor for ex
+    extractor, example = BasicExtractor(ex, v)
+
+    if isinstance(example, Callable) and v.startswith('rql_'):
+        return lambda o: extractor(o)(*args)
+
+    return extractor
 
 
 def SmartReplacer(ex, a):
@@ -184,7 +203,6 @@ class Runtime(Component):
         def localvars(_):
             """
             `vars` - list the current dictionary of variables.
-            Because variables cannot be set yet, this is useless.
             """
             self.add_result(varlist)
 
@@ -221,6 +239,23 @@ class Runtime(Component):
                 vals = localextract(l, attr)
             varlist[name] = vals
             return l
+
+        @Local
+        def localapplymappeddata(d: Dataset, name: str, by: str):
+            example = d.example()
+            if not hasattr(example, "dynamic"):
+                raise RuntimeError(f'Type {type(example)} does not have dynamic data storage available. You may want to convert to the Player type with `| players`.')
+
+            ex = SmartExtractor(example, by)
+
+            mapping = dict(varlist[name])
+            has_valid = False
+            for o in d.l:
+                o.dynamic["default"] = mapping.get(ex(o))
+                if not has_valid and o.dynamic["default"] is not None:
+                    has_valid = True
+            if not has_valid:
+                self.add_result(f"Warning: During applymappeddata, all data applied was None, which may indicate a problem. The key type of your mapping is: {type(varlist[name][0][0])} (for example, '{varlist[name][0][0]}'. The type of {by} is {type(ex(example))} (for example, '{ex(example)}')")
 
         @Local
         def localkeepifattrcontained(d: Dataset, attr: str, variable: str):
@@ -470,7 +505,8 @@ class Runtime(Component):
             If more than one attribute is supplied, extracts all attributes into a tuple.
             """
             if len(args) == 1:
-                return [x.extract(*args) for x in l.l]
+                extractor = SmartExtractor(l.example(), *args)
+                return [extractor(x) for x in l.l]
             extractors = [SmartExtractor(l.example(), a) for a in args]
             return [tuple(e(x) for e in extractors) for x in l.l]
 

@@ -70,16 +70,22 @@ class Player:
     def __repr__(self):
         return f'<Player({self.nick}, {self.elo}>'
 
+    def rql_dynamic(self, key="default"):
+        return self.dynamic[key]
+
     def extract(self, k):
         return _extract(self, k)
 
     def completions(self, mode=2):
         return self.wins[mode] - self.ff_wins[mode]
 
-    def completion_winpct(self, mode=2):
+    def rql_completions(self, mode=2):
+        return self.wins[mode] - self.ff_wins[mode]
+
+    def rql_completion_winpct(self, mode=2):
         return 1 - (self.ff_wins[mode] / self.wins[mode])
 
-    def completion_allpct(self, mode=2):
+    def rql_completion_allpct(self, mode=2):
         # total wins - ff_wins = completion #
         return (self.wins[mode] - self.ff_wins[mode]) / self.played_per[mode]
 
@@ -94,9 +100,6 @@ class Player:
 
     def rql_total_time(self):
         return Milliseconds(sum(self.time_per.values()))
-
-    def total_games(self):
-        return sum(self.played_per.values())
 
     def rql_total_games(self):
         return sum(self.played_per.values())
