@@ -264,6 +264,10 @@ class Runtime(Component):
             s = set(varlist[variable])
 
             e = SmartExtractor(d.example(), attr)
+            example = e(d.example())
+            if isinstance(example, list):
+                # Quick fix for now.
+                return [x for x in d.l if any([inner in s for inner in e(x)])]
 
             return [x for x in d.l if e(x) in s]
 

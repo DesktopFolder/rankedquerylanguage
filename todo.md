@@ -3,9 +3,14 @@
 - raw
 - whatever fulhamn needed idk
 - `output` -> `output file`, `output graph`, etc
+- | timefmt / | durationfmt
 
 - make commands a separate object etc (commandctx) @Command(t=list)
 - live update
+
+- lazy evaluation.
+    - where possible, return EvaluatableFilter
+    - Terminals that require a certain # of things are PullingFilter or something?
 
 - tournament.py but as a job
 - tournament creation system
