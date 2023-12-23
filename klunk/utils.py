@@ -41,3 +41,7 @@ def time_fmt(x: int|float, is_s=False):
 def percentage_str(small, large):
     pctg = round(100 * small / large, 2)
     return f'{pctg}% ({small} / {large})'
+
+def test_guild():
+    import discord
+    return discord.Object(id=1133544816563716250)  # replace with your guild id

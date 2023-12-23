@@ -1,25 +1,14 @@
 import discord
 from discord import app_commands
 from io import BytesIO
-
-# leaving this commented in case I want to port this behaviour to v2
-#from qb.db import load_raw_matches, to_idx, to_idx_key
-#from qb.match import QueryMatch
-
 from klunk import sandbox
 from klunk.language import ParseError
 
 ONE_TIME = True
 
-MY_GUILD = discord.Object(id=1133544816563716250)  # replace with your guild id
-try:
-    token = open('token.txt').read().strip()
-except:
-    token = None
-
 class QueryEngineV2:
     def __init__(self) -> None:
-        self.formatter = None
+        self.formatter: None | dict = None
 
     def clean(self, s: str) -> str:
         if self.formatter is not None:
@@ -85,8 +74,8 @@ class MyClient(discord.Client):
     # By doing so, we don't have to wait up to an hour until they are shown to the end-user.
     async def setup_hook(self):
         # This copies the global commands over to your guild.
-        self.tree.copy_global_to(guild=MY_GUILD)
-        await self.tree.sync()
+        # self.tree.copy_global_to(guild=MY_GUILD) # don't bother with this anymore
+        await self.tree.sync() # this syncs to other guilds
 
 
 intents = discord.Intents.default()
@@ -115,10 +104,7 @@ async def on_ready():
 
 
 async def run_discord_query(interaction: discord.Interaction, query: str, notes=None):
-    # COC-PYWRITE
-    # also doc the above lol 
-    # also, check how to remove/rename commands...
-    print('Running query:', query)
+    print('Running Discord query:', query)
     await interaction.response.defer(ephemeral = False, thinking = True)
     resp = qe.run(query, False, False, True)
     print('Bot finished running query:', query)
@@ -219,31 +205,41 @@ async def query(interaction: discord.Interaction, query: str):
     await run_discord_query(interaction, query, notes)
 
 
-if __name__ == '__main__':
-    import sys
-    a = sys.argv[1:]
-    if '--preload' in a:
+def run_cli():
+    # CLI version of the bot, so that we can test without a Discord bot.
+    print_debug = False
+    try:
+        import readline # pyright: ignore
+    except:
+        print('Warning: Was unable to import the readline module. '
+              'To get readline support on windows, try `pip install pyreadline`')
+    while True:
+        try:
+            query = input("> ").strip()
+            if query == '+debug':
+                print_debug = True
+            elif query == '-debug':
+                print_debug = False
+            else:
+                print(qe.run(query, print_debug, no_mq=True))
+        except EOFError:
+            break
+
+
+def main(args):
+    if '--preload' in args:
+        print('Preloading all loadable data into engine.')
         sandbox.Query("+debug timing tb | testlog 'Preloaded data.'").run()
         print('Finished preloading. Starting up...')
-    if '--fake' in a:
-        db = False
-        try:
-            import readline # pyright: ignore
-        except:
-            print('Warning: Was unable to import the readline module. '
-                  'To get readline support on windows, try `pip install pyreadline`')
-        while True:
-            try:
-                x = input("> ").strip()
-                if x == '+debug':
-                    db = True
-                elif x == '-debug':
-                    db = False
-                else:
-                    print(qe.run(x, db, no_mq=True))
-            except EOFError:
-                break
+        
+    if '--fake' in args:
+        run_cli()
     else:
-        assert token is not None
+        # Any Discord-only configuration should be done here.
         qe.formatter = DiscordFormatter
-        client.run(token)
+        client.run(open('token.txt').read().strip())
+
+
+if __name__ == '__main__':
+    import sys
+    main(sys.argv[1:])

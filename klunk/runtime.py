@@ -36,7 +36,7 @@ def get_examples():
   - Uses the `count` command to output the resulting number of matches.
 - `index s2 | filter seed_type(shipwreck) | extract timelines | segmentby uuid | drop_list empty | splits.has find_bastion | splits.get find_bastion | sort time`
   - Uses the `index` command to switch to the `s2` index. sN indexes contain ranked, non-decay, non-cheated matches from season N, starting with s0.
-  - Uses the `filter` command to keep only matches whose seed_type was `shipwreck`.
+  - Uses the `filter` command to keep only matches whose seed_type was `shipwreck`. (other types: ruined_portal, buried_treasure, village, desert_temple)
   - Uses the `extract` command to extract the timelines from these matches. Our dataset is now 'lists of splits from matches' (instead of 'lists of matches')
   - Uses the `segmentby` command to split the lists of 'timelines for each match' into lists of 'timelines for each player-match combination'. This is not confusing, trust me :)
   - Uses the `drop_list empty` command pairing to remove any lists of timelines that are empty. I think this is useless but I left it in, lol.
