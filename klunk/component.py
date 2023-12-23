@@ -16,36 +16,37 @@ class Component:
 
     def handle_parameters(self, parameters):
         for param in parameters:
-            if param == 'debug':
+            if param == "debug":
                 self.debug = True
                 self.log(f"{self.name} entered debug mode.")
             # This basically allows us to have tests for printing things.
-            elif param == 'test':
+            elif param == "test":
                 self.is_test = True
                 self.log(f"{self.name} entered testing mode.")
             # Ah, timing.
-            elif param == 'timing':
+            elif param == "timing":
                 self._timing = True
                 self.log(f"{self.name} entered timing mode.")
             # Tracebacks! Is that like a tattoo?
-            elif param in ['tb', 'tracebacks']:
+            elif param in ["tb", "tracebacks"]:
                 self._tracebacks = True
                 self.log(f"{self.name} enabled tracebacks.")
             # Files! Discord thing.
-            elif param in ['asfile']:
+            elif param in ["asfile"]:
                 self._do_upload = True
                 self.log(f"{self.name} enabled file uploads.")
-
 
     def time(self, s: str, always=False):
         if self._timing or always:
             from time import time
+
             self._time[s] = time()
 
     def time_diff(self, s: str):
         if not self._timing:
             return None
         from time import time
+
         end = time()
         v = self._time.get(s)
         if v is None:
@@ -60,19 +61,19 @@ class Component:
             # Assertions are only for this kind of situation
             assert td is not None
 
-            m = 'm'
+            m = "m"
             if td > 1000:
                 td = round(td / 1000, 2)
-                m = ''
+                m = ""
             self.log(f"{s} took {td}{m}s")
 
     def log(self, *args):
-        self._log.append(' '.join([str(x) for x in args]))
+        self._log.append(" ".join([str(x) for x in args]))
         if self.debug and not self.is_test:
-            print(f'{self.name}:', *args)
+            print(f"{self.name}:", *args)
 
     def llog(self, c, *args):
-        self.log(f'[c:{c}]', *args)
+        self.log(f"[c:{c}]", *args)
 
     def alwayslog(self, *args):
         v = self.debug
@@ -82,10 +83,10 @@ class Component:
 
     def add_result(self, *args):
         if self._result is None:
-            self.log(f'Began recording a result.')
+            self.log(f"Began recording a result.")
             self._result = list()
-        self._result.append(' '.join([str(x) for x in args]))
-        self.log('Added to result:', *args)
+        self._result.append(" ".join([str(x) for x in args]))
+        self.log("Added to result:", *args)
 
     def dump_log(self):
-        return '\n'.join(self._log)
+        return "\n".join(self._log)

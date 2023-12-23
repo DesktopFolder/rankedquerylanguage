@@ -5,24 +5,27 @@ from . import match
 
 
 def stime_fmt(*args, **kwargs):
-    return time_fmt(*args, **kwargs).lstrip('0:')
+    return time_fmt(*args, **kwargs).lstrip("0:")
 
 
 def match_int_dict():
     return {1: 0, 2: 0, 3: 0, 4: 0}
 
+
 class ExtractFailure:
     pass
+
 
 def _extract(t, k):
     # UGH THIS SHOULD BE FACTORED OUT
     # STOP COPY PASTING THINGS AHHHHH
-    if not k.startswith('_'):
+    if not k.startswith("_"):
         if hasattr(t, k):
             return getattr(t, k)
-        if hasattr(t, 'rql_' + k):
-            return getattr(t, 'rql_' + k)()
+        if hasattr(t, "rql_" + k):
+            return getattr(t, "rql_" + k)()
     return ExtractFailure
+
 
 def _lextract(tl, k):
     if not tl:
@@ -40,7 +43,7 @@ class Player:
         self.nick = nick
         self.uuid = uuid
         self.latest = latest
-        self.elo = elo # NONE UNLESS CALIBRATED
+        self.elo = elo  # NONE UNLESS CALIBRATED
         if self.elo == -1:
             self.elo = None
         self.history = dict()
@@ -65,10 +68,10 @@ class Player:
         self.dynamic = dict()
 
     def __str__(self):
-        return f'{self.nick} ({self.elo} elo)'
+        return f"{self.nick} ({self.elo} elo)"
 
     def __repr__(self):
-        return f'<Player({self.nick}, {self.elo}>'
+        return f"<Player({self.nick}, {self.elo}>"
 
     def rql_dynamic(self, key="default"):
         return self.dynamic[key]
@@ -115,18 +118,23 @@ class Player:
 
     def display(self):
         print(
-            f'{self.nick}: {self.played_per[2]} ranked games, {self.ff_losses[2]} ranked forfeits, {self.wins} wins ({self.ff_wins[2]} due to forfeits), {self.losses[2]} total losses.')
+            f"{self.nick}: {self.played_per[2]} ranked games, {self.ff_losses[2]} ranked forfeits, {self.wins} wins ({self.ff_wins[2]} due to forfeits), {self.losses[2]} total losses."
+        )
 
     def tournament_summary(self):
         # really nice formatting
-        print(f'{self.nick}:\n'
-              f'{self.elo} ({int(round(100*self.wins[2] / self.played_per[2], 0))}%)\n'
-              f'{stime_fmt(self.avg_completion())} / {stime_fmt(self.pb or 0)}')
+        print(
+            f"{self.nick}:\n"
+            f"{self.elo} ({int(round(100*self.wins[2] / self.played_per[2], 0))}%)\n"
+            f"{stime_fmt(self.avg_completion())} / {stime_fmt(self.pb or 0)}"
+        )
 
     def tournament_summary_classic(self):
-        print(f'{self.nick} ({self.elo} final elo):',
-              f'{time_fmt(self.avg_completion())} average completion. (PB: {time_fmt(self.pb or 0)})',
-              f'Winrate: {percentage_str(self.wins[2], self.played_per[2])}')
+        print(
+            f"{self.nick} ({self.elo} final elo):",
+            f"{time_fmt(self.avg_completion())} average completion. (PB: {time_fmt(self.pb or 0)})",
+            f"Winrate: {percentage_str(self.wins[2], self.played_per[2])}",
+        )
 
 
 class PlayerManager:
@@ -141,8 +149,7 @@ class PlayerManager:
                 uuid = member.uuid
                 assert uuid is not None
                 if uuid not in self.players:
-                    self.players[uuid] = Player(
-                        member.user, UUID(uuid), m.date, member.elo_after)
+                    self.players[uuid] = Player(member.user, UUID(uuid), m.date, member.elo_after)
 
                 p = self.players[uuid]
 
@@ -165,7 +172,7 @@ class PlayerManager:
                     if uuid == m.winner:
                         if m.is_ff:
                             p.ff_wins[m.type] += 1
-                        else: # CHANGED from ELIF type = 2
+                        else:  # CHANGED from ELIF type = 2
                             # Ranked, no FF, winner, not decay.
                             p.match_completions += 1
                             p.time_completions += m.duration
@@ -178,29 +185,27 @@ class PlayerManager:
                 else:
                     p.decayed += 1
 
-                if 'nether_entries' in inject:
-                    if 'nether_entries' not in p.dynamic:
-                        p.dynamic['nether_entries'] = list()
+                if "nether_entries" in inject:
+                    if "nether_entries" not in p.dynamic:
+                        p.dynamic["nether_entries"] = list()
                     assert type(m) == match.QueryMatch
-                    e = m.earliest('story.enter_the_nether', UUID(uuid))
+                    e = m.earliest("story.enter_the_nether", UUID(uuid))
                     if e is not None:
-                        p.dynamic['nether_entries'].append(e.time)
+                        p.dynamic["nether_entries"].append(e.time)
 
             if not m.is_decay:
                 self.games_added += 1
                 if m.type == 2:
-                    assert(len(m.members) == 2)
+                    assert len(m.members) == 2
                     self.ranked_added += 1
 
-    def filtered(self,
-                 min_games=match_int_dict(),
-                 win_games=match_int_dict(),
-                 f: Callable = lambda _: True):
+    def filtered(self, min_games=match_int_dict(), win_games=match_int_dict(), f: Callable = lambda _: True):
         def mg(p, md):
             return all([p.played_per[t] >= md[t] for t in range(1, 5) if t in md])
 
         def wg(p, wd):
             return all([p.wins[t] >= wd[t] for t in range(1, 5) if t in wd])
+
         return [p for p in self.players.values() if mg(p, min_games) and wg(p, win_games) and f(p)]
 
     def leaderboard(self):
@@ -211,7 +216,7 @@ class PlayerManager:
         for user in self.players.values():
             if user.nick.lower() == nick:
                 return user
-        raise KeyError(f'{nick} not in players')
+        raise KeyError(f"{nick} not in players")
 
 
 class MatchPlayer:
@@ -225,7 +230,7 @@ class MatchPlayer:
     def from_match(m: match.QueryMatch):
         def uuid_iter(m):
             for p in m.members:
-                yield p['uuid']
+                yield p["uuid"]
 
         mps = {uuid: MatchPlayer(uuid) for uuid in uuid_iter(m)}
 
@@ -237,28 +242,27 @@ class MatchPlayer:
 
         if m.has_elos:
             for p in m.members:
-                mps[p['uuid']].elo_before = p['elo_before']
-                mps[p['uuid']].elo_after = p['elo_after']
+                mps[p["uuid"]].elo_before = p["elo_before"]
+                mps[p["uuid"]].elo_after = p["elo_after"]
 
         return list(mps.values())
+
 
 def top_n(l: list[Player], n=10, display=None, key=None, reverse=True, compress_extra=None, is_pct=True):
     assert len(l) >= n
     if key is not None:
         if compress_extra:
             l = sorted(l, key=key, reverse=reverse)[0:n]
-            print(f'{l[0]} - {(display or key)(l[0])}')
+            print(f"{l[0]} - {(display or key)(l[0])}")
             # #2: Couriway (71%),
             if is_pct:
-                print(', '.join(
-                    [f'#{i + 2}: {p.nick} ({int(round(key(p)*100, 0))}%)' for i, p in enumerate(l[1:])]))
+                print(", ".join([f"#{i + 2}: {p.nick} ({int(round(key(p)*100, 0))}%)" for i, p in enumerate(l[1:])]))
             else:
-                print(
-                    ', '.join([f'#{i + 2}: {p.nick} ({key(p)})' for i, p in enumerate(l[1:])]))
+                print(", ".join([f"#{i + 2}: {p.nick} ({key(p)})" for i, p in enumerate(l[1:])]))
             return
         for p in sorted(l, key=key, reverse=reverse)[0:n]:
-            print(f'{p} - {(display or key)(p)}')
+            print(f"{p} - {(display or key)(p)}")
         return
-    display = display or (lambda p: f'decayed {p.decayed} times')
+    display = display or (lambda p: f"decayed {p.decayed} times")
     for p in l[0:n]:
-        print(f'{p} - {display(p)}')
+        print(f"{p} - {display(p)}")

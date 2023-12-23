@@ -20,13 +20,16 @@ from typing import Callable
 
 COMMANDS = {}
 
+
 def Split(f: Callable):
     realname = f.__name__
-    COMMANDS[f'splits.{realname}'] = f
+    COMMANDS[f"splits.{realname}"] = f
     return f
 
+
 def split_eq(*, real: str, query: str):
-    return real == query or real.partition('.')[2] == query
+    return real == query or real.partition(".")[2] == query
+
 
 def has_split(l: list[Timeline], split_id: str):
     for split in l:
@@ -34,15 +37,18 @@ def has_split(l: list[Timeline], split_id: str):
             return True
     return False
 
+
 def get_split(l: list[Timeline], split_id: str):
     for split in l:
         if split_eq(real=split.id, query=split_id):
             return split
     return None
 
+
 @Split
 def filter(ds: Dataset, *args):
     return [[y for y in x if any([split_eq(real=y.id, query=a) for a in args])] for x in ds.l]
+
 
 @Split
 def has(ds: Dataset, split_id: str):
@@ -51,9 +57,11 @@ def has(ds: Dataset, split_id: str):
     """
     return [s for s in ds.l if has_split(s, split_id)]
 
+
 @Split
 def get(ds: Dataset, split_id: str):
     return [get_split(s, split_id) for s in ds.l]
+
 
 @Split
 def get_if(ds: Dataset, split_id: str):
@@ -67,6 +75,7 @@ def get_if(ds: Dataset, split_id: str):
             l.append(split)
     return l
 
+
 @Split
 def diff(ds: Dataset, split_id_lt: str, split_id_gt: str):
     """
@@ -74,7 +83,7 @@ def diff(ds: Dataset, split_id_lt: str, split_id_gt: str):
     All split lists which do not contain both lt & gt will be dropped.
     """
     l = list()
-    id_res = f'{split_id_gt}-{split_id_lt}'
+    id_res = f"{split_id_gt}-{split_id_lt}"
     for s in ds.l:
         lt = get_split(s, split_id_lt)
         if lt is None:
@@ -83,10 +92,13 @@ def diff(ds: Dataset, split_id_lt: str, split_id_gt: str):
         if gt is None:
             continue
         if gt.uuid != lt.uuid:
-            raise RuntimeError(f'UUIDs during diff of {split_id_lt} and {split_id_gt} did not match. Maybe you forgot to segment the lists by uuid.')
+            raise RuntimeError(
+                f"UUIDs during diff of {split_id_lt} and {split_id_gt} did not match. Maybe you forgot to segment the lists by uuid."
+            )
         # Recombine into a weird Timeline... thing.
         l.append(Timeline.from_items(gt.time - lt.time, id_res, lt.uuid))
     return l
+
 
 @Split
 def dump_ids(ds: Dataset):

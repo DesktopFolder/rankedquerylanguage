@@ -6,17 +6,20 @@ from typing import Callable
 
 JOBS = {}
 
+
 def Job(f: Callable):
     realname = f.__name__
     JOBS[realname] = f
     return f
+
 
 def execute(job, l: Dataset, varlist):
     # we actually use variables, lol
     job, args = job
     if job in JOBS:
         return JOBS[job](ds=l, args=args, variables=varlist)
-    raise RuntimeError(f'Job {job} does not exist. Valid jobs: {list(JOBS.keys())}')
+    raise RuntimeError(f"Job {job} does not exist. Valid jobs: {list(JOBS.keys())}")
+
 
 @Job
 def generate_splits_by_uuids(ds: Dataset, args: str, variables):

@@ -2,12 +2,12 @@ CURRENT_SEASON = 2
 
 
 def fFF(m) -> bool:  # Filters for forfeits
-    MIN_DURATION = (1000 * 60 * 4)
+    MIN_DURATION = 1000 * 60 * 4
     if isinstance(m, Match):
         return m.is_ff or m.duration < MIN_DURATION
-    if not ('forfeit' in m and type(m['forfeit']) is bool):
+    if not ("forfeit" in m and type(m["forfeit"]) is bool):
         raise RuntimeError(m)
-    return m['forfeit'] == True or m.get('final_time', 0) < MIN_DURATION
+    return m["forfeit"] == True or m.get("final_time", 0) < MIN_DURATION
 
 
 def fNOFF(m) -> bool:  # Filters for non-forfeits
@@ -25,12 +25,12 @@ def ufSEASON(season):
 def fREALMATCH(m) -> bool:
     if isinstance(m, Match):
         return not m.is_decay
-    return not m.get('is_decay', False)
+    return not m.get("is_decay", False)
 
 
 def fCOMPLETED(m) -> bool:
     # not a forfeit, not cheated, not a draw, not a decay
-    return not fFF(m) and not m['winner'] == None and fREALMATCH(m)
+    return not fFF(m) and not m["winner"] == None and fREALMATCH(m)
 
 
 def fRANKED(m) -> bool:
@@ -44,13 +44,17 @@ def fDEFAULTS(m):
 def fNONE(m):
     return True
 
+
 def ufALLOF(*args):
     def fALLOF(m):
         return all([a(m) for a in args])
+
     return fALLOF
 
+
 def uuid_sort(l):
-    return sorted(l, key=lambda mem: mem['uuid'])
+    return sorted(l, key=lambda mem: mem["uuid"])
+
 
 def filtered(u, *args):
     return [x for x in u if all([f(x) for f in args])]

@@ -21,6 +21,7 @@ winner -> FUNCTION(STRING)
 )
 """
 
+
 class Token:
     def __init__(self, name, data, c=None):
         self.name = name
@@ -39,7 +40,8 @@ class Token:
 
     def __repr__(self) -> str:
         loc = "" if self.c is None else f", c:{self.c}"
-        return f'Token<{self.name}, {self.data}{loc}>'
+        return f"Token<{self.name}, {self.data}{loc}>"
+
 
 class BasicToken(Token):
     def __init__(self, name):
@@ -53,7 +55,8 @@ class BasicToken(Token):
 
     def __repr__(self) -> str:
         loc = "" if self.c is None else f", c:{self.c}"
-        return f'Token<{self.name}{loc}>'
+        return f"Token<{self.name}{loc}>"
+
 
 class Tokens:
     PIPE = BasicToken("|")
@@ -62,33 +65,42 @@ class Tokens:
     LIST = Token("LIST", ())
     PARAMETERS = Token("PARAMETERS", list())
 
-def STRING(s = "", c=None):
+
+def STRING(s="", c=None):
     return Tokens.STRING.instance(s, c)
+
 
 def PIPE(c=None):
     return Tokens.PIPE.instance(c=c)
 
-def FUNCTION(s = "", d="", c=None):
+
+def FUNCTION(s="", d="", c=None):
     return Tokens.FUNCTION.instance((s, d), c=c)
+
 
 def LIST(c=None):
     return Tokens.LIST.instance(list(), c=c)
 
+
 def prep_top_level_expression(expr: str):
-    if not expr.startswith('|'):
-        expr = '|' + expr
+    if not expr.startswith("|"):
+        expr = "|" + expr
 
     return expr
+
 
 class ParseError(ValueError):
     pass
 
+
 class CompileError(ValueError):
     pass
 
+
 # A bunch of random parse helpers.
 def peek(s: str):
-    return s[0] if s else ''
+    return s[0] if s else ""
+
 
 def split_before(c: str, p: Callable) -> Tuple[str, str]:
     i = 0
@@ -98,14 +110,17 @@ def split_before(c: str, p: Callable) -> Tuple[str, str]:
     else:
         # Nothing fulfills the predicate.
         # Return before = full string, after = empty
-        return c, ''
+        return c, ""
     return c[:i], c[i:]
+
 
 def flip(a, b):
     return b, a
 
+
 def consume_string(s: str):
     return split_before(s, lambda c: c in "|() ")
+
 
 def consume_quoted(s: str):
     res = str()
@@ -114,7 +129,7 @@ def consume_quoted(s: str):
     s = s[1:]
     while s:
         a, b = split_before(s, lambda c: c == c1)
-        if a and a[-1] == '\\' and b:
+        if a and a[-1] == "\\" and b:
             # ok I could parse this properly but like
             # why
             # so we'll just do this and if it's an issue..? eh
@@ -126,7 +141,7 @@ def consume_quoted(s: str):
             s = b
             break
     if not s:
-        raise ParseError(f'Could not find end to string: {initial}')
+        raise ParseError(f"Could not find end to string: {initial}")
     return res, s[1:]
 
 
@@ -143,25 +158,26 @@ class Tokenizer(Component):
 
         initial_sz = len(s)
 
-        if peek(s) == '+':
+        if peek(s) == "+":
             # Consume debug arguments.
-            args = s[1:].split('|', 1)
+            args = s[1:].split("|", 1)
             if len(args) == 1:
-                s = ''
+                s = ""
             else:
-                s = '|' + args[1]
-            args = [x for x in args[0].split(' ') if x]
+                s = "|" + args[1]
+            args = [x for x in args[0].split(" ") if x]
             self.handle_parameters(args)
             # I was going to add metadata here so that we could determine the position of the inserted |.
             # Then I realized there's a guaranteed | anyways (or nothing...). So whatever.
             tokens.append(Tokens.PARAMETERS.instance(args, 0))
 
         self.time("Tokenization")
-        
+
         while True:
             if len(tokens) > Tokenizer.MAX_TOKENS:
-                raise ParseError(f'Exceeded max tokens ({Tokenizer.MAX_TOKENS}) '
-                                 f'The current s is: {s}. The last token is: {tokens[-1]}')
+                raise ParseError(
+                    f"Exceeded max tokens ({Tokenizer.MAX_TOKENS}) " f"The current s is: {s}. The last token is: {tokens[-1]}"
+                )
 
             # Consume whitespace.
             s = s.lstrip()
@@ -173,19 +189,19 @@ class Tokenizer(Component):
             loc = initial_sz - len(s)
 
             # Consume pipes.
-            if s[0] == '|':
+            if s[0] == "|":
                 s = s[1:]
                 tokens.append(Tokens.PIPE.instance(loc))
                 continue
 
             if s[0].isalpha():
                 res, s = consume_string(s)
-                if peek(s) == '(':
+                if peek(s) == "(":
                     # It's a function.
                     # Functions allow recursion. So, we must recurse.
                     # Let's not bother for now.
                     # This obviously does not work but frankly it doesn't matter.
-                    data, _, s = s[1:].partition(')')
+                    data, _, s = s[1:].partition(")")
                     tokens.append(Tokens.FUNCTION.instance((res, data), loc))
                 else:
                     tokens.append(Tokens.STRING.instance(res, loc))
@@ -205,17 +221,19 @@ class Tokenizer(Component):
 
             raise ParseError(f"Unexpected character while tokenizing: '{s[0]}' (Query remainder: '{s}')")
 
-        self.log_time('Tokenization')
+        self.log_time("Tokenization")
 
         return tokens
+
 
 class Compiler(Component):
     """
     Compiler takes the lexer output and compiles it into an easily callable pipeline.
     something something graphics programming
     """
+
     def __init__(self):
-        super().__init__("Compiler") 
+        super().__init__("Compiler")
 
     def validate(self, expr: Expression):
         if not expr:
@@ -228,7 +246,7 @@ class Compiler(Component):
         # And compiling things, but you know, that's obvious, right?
         # Obviously, this is an interpreted language, so this is analogous to javac.
         # But somehow worse :)
-        
+
         # but better ofc i mean it's java so
         pipeline: list[Expression] = list()
         parameters: list[str] = list()
@@ -277,10 +295,10 @@ class Compiler(Component):
             if tok == STRING():
                 if expr:
                     expr.arguments.append(tok.data)
-                    self.llog(tok.c, f'Added string argument to {expr.command}: {tok.data}')
+                    self.llog(tok.c, f"Added string argument to {expr.command}: {tok.data}")
                 else:
                     expr.command = tok.data
-                    self.llog(tok.c, f'Started new expression with command {tok.data}')
+                    self.llog(tok.c, f"Started new expression with command {tok.data}")
                 continue
 
             if tok == FUNCTION():
@@ -288,14 +306,16 @@ class Compiler(Component):
                     # TODO - is this actually super dumb?
                     # e.g. | fastest(10) makes a lot of sense.
                     # but forcing nice naming (| fastest n(10)) doesn't seem terrible, idk. whatever.
-                    raise CompileError(f'Found leading function in expression ({tok.data}). Expressions must start with a command, which does not have parentheses (e.g. "| filter winner(DesktopFolder)")')
+                    raise CompileError(
+                        f'Found leading function in expression ({tok.data}). Expressions must start with a command, which does not have parentheses (e.g. "| filter winner(DesktopFolder)")'
+                    )
                 # TODO - must recurse here. for now we will not... lol.
                 # This is part of where we're really just passing things along for the time being.
                 # I will rework this later. But it's mostly drop in fixes/extra code.
                 # I don't think this is shooting myself in the foot, now that the overall approach is better.
                 # The function execution code will just be really simple for the time being.
                 expr.arguments.append(tok.data)
-                self.llog(tok.c, f'Added function: {tok.data}')
+                self.llog(tok.c, f"Added function: {tok.data}")
                 continue
 
             raise CompileError(f"Unsupported token: {tok}")
