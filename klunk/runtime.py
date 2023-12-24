@@ -153,6 +153,29 @@ def SmartReplacer(ex, a):
     raise RuntimeError(f"Could not find a way to extract {a} from {type(ex)}. Try | attrs.")
 
 
+class ExecutableExpression:
+    def __init__(self, executor, *args, **kwargs):
+        self.executor = executor
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self, d: Dataset):
+        return self.executor(d, *self.args, **self.kwargs)
+
+
+class Executor:
+    def __init__(self, func, greedy=True, resulting=False):
+        self.func = func
+        self.greedy = greedy
+        self.resulting = resulting
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
+    def prime(self, *args, **kwargs):
+        return ExecutableExpression(self, *args, **kwargs)
+
+
 class Runtime(Component):
     def __init__(self, datasets: dict[str, Dataset], commands: dict[str, Callable], formatter=None):
         super().__init__("Runtime")
@@ -198,23 +221,26 @@ class Runtime(Component):
         # Now THIS is definitely not correct but whatever lol
         commands.logger = self
 
-        def Local(f: Callable):
-            realname = f.__name__[len("local") :]
-            localfunclist[realname] = f
-            return f
+        def Local(**kwargs):
+            def LFC(f: Callable):
+                realname = f.__name__[len("local") :]
+                f = Executor(f, **kwargs)
+                localfunclist[realname] = f
+                return f
+            return LFC
 
-        @Local
+        @Local(resulting=True)
         def localvars(_):
             """
             `vars` - list the current dictionary of variables.
             """
             self.add_result(varlist)
 
-        @Local
+        @Local()
         def localdebugecho(_, *args, **kwargs):
             self.add_result(f"Args: {args}, kwargs: {kwargs}")
 
-        @Local
+        @Local()
         def localmakelist(_, name: str, item_type: str, *args):
             """
             `makelist(name, item_type, items...)` - create a list variable.
@@ -233,7 +259,7 @@ class Runtime(Component):
             varlist[name] = [conv(a) for a in args]
             # don't return anything - keep current setup.
 
-        @Local
+        @Local()
         def localassign(l: Dataset, name: str, attr: str | None = None):
             """
             `assign` - assign to a variable whose name is provided by the first parameter.
@@ -246,7 +272,7 @@ class Runtime(Component):
             varlist[name] = vals
             return l
 
-        @Local
+        @Local()
         def localapplymappeddata(d: Dataset, name: str, by: str):
             example = d.example()
             if not hasattr(example, "dynamic"):
@@ -267,7 +293,7 @@ class Runtime(Component):
                     f"Warning: During applymappeddata, all data applied was None, which may indicate a problem. The key type of your mapping is: {type(varlist[name][0][0])} (for example, '{varlist[name][0][0]}'. The type of {by} is {type(ex(example))} (for example, '{ex(example)}')"
                 )
 
-        @Local
+        @Local()
         def localkeepifattrcontained(d: Dataset, attr: str, variable: str):
             if variable not in varlist:
                 raise RuntimeError(f"Variable name {variable} does not exist. For a list, see `vars`.")
@@ -281,7 +307,7 @@ class Runtime(Component):
 
             return [x for x in d.l if e(x) in s]
 
-        @Local
+        @Local()
         def localmetainfo(_):
             """
             `metainfo` - Get some information about the bot/project itself.
@@ -294,7 +320,7 @@ class Runtime(Component):
         """
             )
 
-        @Local
+        @Local()
         def localindex(_, name: str):
             """
             `index(name)` - Load an index to operate off of. Examples:
@@ -315,7 +341,7 @@ class Runtime(Component):
                 raise RuntimeError(f"{name} is not a valid dataset name.")
             return self.datasets[name]
 
-        @Local
+        @Local()
         def localcommands(_):
             """
             `commands` - List valid commands.
@@ -331,7 +357,7 @@ class Runtime(Component):
                 "Each query segment must begin with a pipe (|) followed by a command, followed by its arguments. For information on a specific command, use /query help COMMAND"
             )
 
-        @Local
+        @Local()
         def localallfuncs(_):
             """
             `allfuncs` - Debugging command for listing all functions, including hidden ones.
@@ -339,14 +365,14 @@ class Runtime(Component):
             for i, comlist in enumerate(comlists):
                 self.add_result(f"Functions with priority {len(comlists)-i}:", ", ".join(comlist.keys()))
 
-        @Local
+        @Local()
         def localinfo(_):
             """
             `info` - Gets information on the current dataset being used.
             """
             self.add_result(dataset.info())
 
-        @Local
+        @Local()
         def localdetailedinfo(l: Dataset):
             """
             `detailedinfo` - for getting info on the current dataset.
@@ -354,7 +380,7 @@ class Runtime(Component):
             """
             self.add_result(l.detailed_info())
 
-        @Local
+        @Local()
         def localwait(_, num_seconds):
             """
             `wait(num_seconds)` - wait for some period of time.
@@ -363,7 +389,7 @@ class Runtime(Component):
             """
             pass
 
-        @Local
+        @Local()
         def localplayers(l: Dataset):
             """
             `players` - Converts the dataset from a match dataset to a player dataset.
@@ -371,20 +397,20 @@ class Runtime(Component):
             """
             return l.clone(list(PlayerManager(l.l).players.values()))
 
-        @Local
+        @Local()
         def localexamples(_):
             """
             `examples` - Prints some examples.
             """
             self.add_result(get_examples())
 
-        @Local
+        @Local()
         def localdebugsplits(l: Dataset):
             ex = l.example()
             assert type(ex) == QueryMatch
             self.add_result(str(ex.timelines))
 
-        @Local
+        @Local()
         def localhelp(_, arg=None):
             """
             `help(command)` - If `command` is not given, prints general help.
@@ -399,7 +425,7 @@ class Runtime(Component):
                 return
             self.add_result(self.format(com.__doc__, "doc"))
 
-        @Local
+        @Local()
         def localsort(d: Dataset, attribute, **kwargs):
             """
             `sort(attribute)` - Sorts the dataset based on `attribute`. To list attributes, see `help attrs`
@@ -417,7 +443,7 @@ class Runtime(Component):
                 )
             return sorted(res, key=lambda x: extractor(x), **kwargs)
 
-        @Local
+        @Local()
         def localraw(d: Dataset, *attributes):
             ex = d.example()
             setters = [SmartReplacer(ex, attribute) for attribute in attributes]
@@ -432,7 +458,7 @@ class Runtime(Component):
                 return [do_replacement(o) for o in d.l]
             return d.l
 
-        @Local
+        @Local()
         def localrsort(l: Dataset, attribute):
             """
             `rsort(attribute)` - Reverse sorts the dataset based on `attribute`. To list attributes, `help attrs`
@@ -440,7 +466,7 @@ class Runtime(Component):
             # For now this should do the trick.
             return localsort(l, attribute, reverse=True)
 
-        @Local
+        @Local()
         def localtake(l: Dataset, *args):
             """
             `take(n)` - Reduce the size of the input data. Examples:
@@ -463,7 +489,24 @@ class Runtime(Component):
                 return data[-1 * n :]
             return data[:n]
 
-        @Local
+        @Local()
+        def localslice(l: Dataset, *args):
+            """
+            `slice(expr)` - Return dataset[expr], where expr is a Python-style slice (only x:y style, no step yet)
+            Example: `| slice 4:10` returns dataset[4:10]. `| slice [1:-1]` removes the first and last element.
+            Due to a current parsing limitation, prefix with 0: if you want to go from the start. Starting with :
+            is not supported at present.
+            """
+            args = list(args)
+            if len(args) != 1:
+                raise RuntimeError(f'Slice takes exactly one argument, a slice expression (e.g. 4: or 3:5 or 0:10')
+            b, _, a = args[0].partition(':')
+            b = 0 if not b else int(b)
+            if a:
+                return l.l[b:int(a)]
+            return l.l[b:]
+
+        @Local()
         def localaverage(l: Dataset, val, *args):
             """
             `average(attribute)` - Compute the average value of an attribute across a dataset.
@@ -483,7 +526,7 @@ class Runtime(Component):
             else:
                 self.add_result(f"Average {val}: " + str((result if "precise" in args else round(result, 2))))
 
-        @Local
+        @Local()
         def localaverageby(l: Dataset, to_average: str, by: str):
             """
             `averageby(to_average, by)` - Compute the average value of an attribute across a dataset, by the value of a second attribute.
@@ -501,7 +544,7 @@ class Runtime(Component):
                 avg_dict[key_extractor(o)].append(value_extractor(o))
             return [tuple([k, t(average(v))]) for k, v in avg_dict.items()]
 
-        @Local
+        @Local()
         def localcount(l: Dataset):
             """
             `count` - Returns the current dataset size.
@@ -512,7 +555,7 @@ class Runtime(Component):
                 self.add_result(f"Dataset currently only has one item.")
             return l
 
-        @Local
+        @Local()
         def localextract(l: Dataset, *args):
             """
             `extract(attribute, ...)` - Extract the value of an attribute from all input objects.
@@ -526,7 +569,7 @@ class Runtime(Component):
             extractors = [SmartExtractor(l.example(), a) for a in args]
             return [tuple(e(x) for e in extractors) for x in l.l]
 
-        @Local
+        @Local()
         def localsegmentby(l: Dataset, attribute: str):
             """
             extract(timelines) -> [[Timeline(),...], ]
@@ -556,7 +599,7 @@ class Runtime(Component):
                     newlist.append(newsublist)
             return l.clone(newlist)
 
-        @Local
+        @Local()
         def localbetween(d: Dataset, attribute, min_val, max_val):
             """
             `between(attribute, minimum, maximum)` - Filters the dataset to only have objects where
@@ -578,7 +621,7 @@ class Runtime(Component):
                 return e.__slots__
             return [x for x in dir(e) if not x.startswith("_")]
 
-        @Local
+        @Local()
         def localattrs(l: Dataset):
             """
             `attrs` - List the attributes that are available for the current datatype.
@@ -587,7 +630,7 @@ class Runtime(Component):
             example = l.l[0]
             self.add_result(f"Known accessible attributes of {type(example)}: " + ", ".join(getslots(example)))
 
-        @Local
+        @Local()
         def localexample(l: Dataset, attribute=None):
             """
             `example(attribute)` - If `attribute` is provided, provides an example value for that attribute. Otherwise,
@@ -606,7 +649,7 @@ class Runtime(Component):
                         d[k] = "List[...]"
                 self.add_result(f"Example object layout: {d}")
 
-        @Local
+        @Local()
         def localexampleinfo(l: Dataset):
             inf = list()
 
@@ -622,7 +665,7 @@ class Runtime(Component):
             add_info("Example Object", inf, l.example())
             self.add_result(", ".join(inf))
 
-        @Local
+        @Local()
         def localdrop_outliers(d: Dataset, attr: str, factor: str = "4", method="diff"):
             """
             drop_high_outliers(attribute, factor=4, method=diff) - drop outliers that are factor* higher than the average
@@ -643,13 +686,13 @@ class Runtime(Component):
             method = methods[method]
             return [x for x in d.l if method(e(x))]
 
-        @Local
+        @Local()
         def localdrop_list(d: Dataset, value: str):
             if value == "empty":
                 return d.clone([x for x in d.l if len(x) != 0])
             raise RuntimeError(f"Could not find drop parameter {value}")
 
-        @Local
+        @Local()
         def localdrop(d: Dataset, attribute, value):
             """
             `drop(attribute, value)` - Drops any records where attribute is equal to value.
@@ -677,7 +720,7 @@ class Runtime(Component):
                     ]
             return [x for x in d.l if extractor(x) != value]
 
-        @Local
+        @Local()
         def localtest_list(d: Dataset, attribute, operation, destination=None):
             # see filter for more details on how this will work in the future lol
             if operation == "abs_diff":
@@ -730,7 +773,7 @@ class Runtime(Component):
             else:
                 raise RuntimeError(f"Unsupported operation: {operation}")
 
-        @Local
+        @Local()
         def localfilter2(l: Dataset, *args):
             """
             `filter2(...)` - Just DesktopFolder testing things out. Language probably
@@ -738,7 +781,7 @@ class Runtime(Component):
             """
             pass
 
-        @Local
+        @Local()
         def localfilter(l: Dataset, *args):
             """
             `filter(...)` - Filters the input dataset based on 1 or more filter arguments.
@@ -810,37 +853,38 @@ class Runtime(Component):
 
             return res
 
-        @Local
+        @Local()
         def localjob(l, job: tuple[str, str]):
             if type(job) != tuple:
                 raise RuntimeError(f"Job {job} was provided without an argument list.")
             return jobs.execute(job, l=l, varlist=varlist)
 
-        def execute_simple(l, fname, args):
+        def execute_simple(fname, args) -> ExecutableExpression:
             # Executes a command with the listed arguments.
             # Does not (!) evaluate function/expression parameters.
             for comlist in comlists:
                 if fname in comlist:
-                    self.log(f"Attempting to execute {fname}({args})")
-                    return comlist[fname](l, *args)
+                    self.log(f"Creating expression {fname}({args})")
+                    return comlist[fname].prime(*args)
             raise RuntimeError(f"{fname} is not a valid command name. Try `commands` to list valid commands.")
 
-        def try_execute(l, e: Expression):
+        def try_execute(e: Expression) -> ExecutableExpression:
             if not e.arguments:
-                return execute_simple(l, e.command, [])
+                return execute_simple(e.command, [])
             if all([type(a) == str for a in e.arguments]):
-                return execute_simple(l, e.command, e.arguments)
+                return execute_simple(e.command, e.arguments)
 
             # TODO - support functions properly. :) for now no recursion for you, fools! no recursion for anyone! ahahaha
             if all([type(a) in [str, tuple, list] for a in e.arguments]):
-                return execute_simple(l, e.command, e.arguments)
+                return execute_simple(e.command, e.arguments)
             raise RuntimeError(f"Could not execute: {e}")
 
         while pipeline:
             e = pipeline.pop(0)
             eid = f"Expression@c:{e.loc}"
             self.time(eid)
-            res = try_execute(dataset, e)
+            exe = try_execute(e)
+            res = exe(dataset)
             # TODO - rolling 'latest dataset metainfo' here for games
             if res is None:
                 pass
@@ -851,6 +895,11 @@ class Runtime(Component):
                     raise RuntimeError(f"Got unhandled result type {type(res)} in {e}")
                 dataset = res
             self.log_time(eid)
+
+            if not pipeline:
+                # Determine if this is terminal.
+                self.log("Completed execution. Info:", dataset.info())
+                return dataset
 
         self.log("Completed execution. Info:", dataset.info())
         return dataset

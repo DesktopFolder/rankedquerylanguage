@@ -7,7 +7,7 @@ from klunk.language import ParseError
 ONE_TIME = True
 
 
-class QueryEngineV2:
+class QueryEngine:
     def __init__(self) -> None:
         self.formatter: None | dict = None
 
@@ -17,6 +17,12 @@ class QueryEngineV2:
         return s
 
     def run(self, query: str, debug: bool = False, timing: bool = False, is_bot: bool = False, no_mq: bool = False):
+        """Run a query within a sandbox.
+        
+        debug - passed on to sandbox.Query
+        timing - passed on to sandbox.Query
+        is_bot - Seems to prepend notes to our output?
+        """
         sb = sandbox.Query(query, debug, timing, self.formatter, no_mq=no_mq)
 
         def format_result(s: str):
@@ -57,8 +63,7 @@ class QueryEngineV2:
                 return format_result(f"Error: {e}")
 
 
-# qe = QueryEngine()
-qe = QueryEngineV2()
+ENGINE = QueryEngine()
 
 
 class MyClient(discord.Client):
@@ -110,7 +115,7 @@ async def on_ready():
 async def run_discord_query(interaction: discord.Interaction, query: str, notes=None):
     print("Running Discord query:", query)
     await interaction.response.defer(ephemeral=False, thinking=True)
-    resp = qe.run(query, False, False, True)
+    resp = ENGINE.run(query, False, False, True)
     print("Bot finished running query:", query)
     notes = "" if notes is None else "\n" + "\nNote: ".join(notes)
     try:
@@ -240,7 +245,7 @@ def run_cli():
             elif query == "-debug":
                 print_debug = False
             else:
-                print(qe.run(query, print_debug, no_mq=True))
+                print(ENGINE.run(query, print_debug, no_mq=True))
         except EOFError:
             break
 
@@ -255,7 +260,7 @@ def main(args):
         run_cli()
     else:
         # Any Discord-only configuration should be done here.
-        qe.formatter = DiscordFormatter
+        ENGINE.formatter = DiscordFormatter
         client.run(open("token.txt").read().strip())
 
 
