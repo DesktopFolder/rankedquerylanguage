@@ -63,7 +63,7 @@ class QueryEngine:
             # result: resulting dataset
             # additional: misc warnings etc
             # file: resulting dataset except it's a file
-            if not all([x is None for x in [result, file, additional]]):
+            if all([x is None for x in [result, file, additional]]):
                 # e.g. `validate` -> never does add_result (so additional is None)
                 # -> returns no dataset, no file
                 return build_literal(None, None)
