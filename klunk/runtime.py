@@ -153,29 +153,6 @@ def SmartReplacer(ex, a):
     raise RuntimeError(f"Could not find a way to extract {a} from {type(ex)}. Try | attrs.")
 
 
-class ExecutableExpression:
-    def __init__(self, executor, *args, **kwargs):
-        self.executor = executor
-        self.args = args
-        self.kwargs = kwargs
-
-    def __call__(self, d: Dataset):
-        return self.executor(d, *self.args, **self.kwargs)
-
-
-class Executor:
-    def __init__(self, func, greedy=True, print_dataset=True):
-        self.func = func
-        self.greedy = greedy
-        self.print_dataset = print_dataset
-
-    def __call__(self, *args, **kwargs):
-        return self.func(*args, **kwargs)
-
-    def prime(self, *args, **kwargs):
-        return ExecutableExpression(self, *args, **kwargs)
-
-
 class Runtime(Component):
     def __init__(self, datasets: dict[str, Dataset], commands: dict[str, Callable], formatter=None):
         super().__init__("Runtime")
@@ -224,7 +201,7 @@ class Runtime(Component):
         def Local(**kwargs):
             def LFC(f: Callable):
                 realname = f.__name__[len("local") :]
-                f = Executor(f, **kwargs)
+                f = commands.Executor(f, **kwargs)
                 localfunclist[realname] = f
                 return f
             return LFC
@@ -239,6 +216,13 @@ class Runtime(Component):
         @Local()
         def localdebugecho(_, *args, **kwargs):
             self.add_result(f"Args: {args}, kwargs: {kwargs}")
+
+        @Local(print_dataset=False)
+        def localvalidate(_):
+            for i, comlist in enumerate(comlists):
+                for executor in comlist.values():
+                    if not isinstance(executor, commands.Executor):
+                        print(f'Bad command: {executor} in list {i}')
 
         @Local()
         def localmakelist(_, name: str, item_type: str, *args):
@@ -859,7 +843,7 @@ class Runtime(Component):
                 raise RuntimeError(f"Job {job} was provided without an argument list.")
             return jobs.execute(job, l=l, varlist=varlist)
 
-        def execute_simple(fname, args) -> ExecutableExpression:
+        def execute_simple(fname, args) -> commands.ExecutableExpression:
             # Executes a command with the listed arguments.
             # Does not (!) evaluate function/expression parameters.
             for comlist in comlists:
@@ -868,7 +852,7 @@ class Runtime(Component):
                     return comlist[fname].prime(*args)
             raise RuntimeError(f"{fname} is not a valid command name. Try `commands` to list valid commands.")
 
-        def try_execute(e: Expression) -> ExecutableExpression:
+        def try_execute(e: Expression) -> commands.ExecutableExpression:
             if not e.arguments:
                 return execute_simple(e.command, [])
             if all([type(a) == str for a in e.arguments]):

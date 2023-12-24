@@ -2,6 +2,29 @@ from typing import Callable
 from .dataset import Dataset
 
 
+class ExecutableExpression:
+    def __init__(self, executor, *args, **kwargs):
+        self.executor = executor
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self, d: Dataset):
+        return self.executor(d, *self.args, **self.kwargs)
+
+
+class Executor:
+    def __init__(self, func, greedy=True, print_dataset=True):
+        self.func = func
+        self.greedy = greedy
+        self.print_dataset = print_dataset
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
+    def prime(self, *args, **kwargs):
+        return ExecutableExpression(self, *args, **kwargs)
+
+
 class Counter:
     def __init__(self, l=None) -> None:
         from collections import Counter
@@ -27,8 +50,8 @@ logger = None
 def Command(f: Callable):
     global basic_commands
     realname = f.__name__[len("_command_") :]
-    basic_commands[realname] = f
-    return f
+    basic_commands[realname] = Executor(f) # add other stuff later lol
+    return Executor(f)
 
 
 def TestCommand(f: Callable):

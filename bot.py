@@ -63,8 +63,10 @@ class QueryEngine:
             # result: resulting dataset
             # additional: misc warnings etc
             # file: resulting dataset except it's a file
-            # all should not be None. handle that first.
-            assert not all([x is None for x in [result, file, additional]])
+            if not all([x is None for x in [result, file, additional]]):
+                # e.g. `validate` -> never does add_result (so additional is None)
+                # -> returns no dataset, no file
+                return build_literal(None, None)
 
             # OK. We want lits=[additional, result.summarize()]
             if file and not additional:

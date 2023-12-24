@@ -1,6 +1,7 @@
 from klunk.match import Timeline
 from .dataset import Dataset
 from typing import Callable
+from .commands import Executor
 
 # Special jobs that do complex things that can't really be done feasibly within the language
 # currently
@@ -23,8 +24,8 @@ COMMANDS = {}
 
 def Split(f: Callable):
     realname = f.__name__
-    COMMANDS[f"splits.{realname}"] = f
-    return f
+    COMMANDS[f"splits.{realname}"] = Executor(f)
+    return Executor(f)
 
 
 def split_eq(*, real: str, query: str):
