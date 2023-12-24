@@ -164,10 +164,10 @@ class ExecutableExpression:
 
 
 class Executor:
-    def __init__(self, func, greedy=True, resulting=False):
+    def __init__(self, func, greedy=True, print_dataset=True):
         self.func = func
         self.greedy = greedy
-        self.resulting = resulting
+        self.print_dataset = print_dataset
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
@@ -229,7 +229,7 @@ class Runtime(Component):
                 return f
             return LFC
 
-        @Local(resulting=True)
+        @Local(print_dataset=False)
         def localvars(_):
             """
             `vars` - list the current dictionary of variables.
@@ -307,7 +307,7 @@ class Runtime(Component):
 
             return [x for x in d.l if e(x) in s]
 
-        @Local()
+        @Local(print_dataset=False)
         def localmetainfo(_):
             """
             `metainfo` - Get some information about the bot/project itself.
@@ -341,7 +341,7 @@ class Runtime(Component):
                 raise RuntimeError(f"{name} is not a valid dataset name.")
             return self.datasets[name]
 
-        @Local()
+        @Local(print_dataset=False)
         def localcommands(_):
             """
             `commands` - List valid commands.
@@ -357,7 +357,7 @@ class Runtime(Component):
                 "Each query segment must begin with a pipe (|) followed by a command, followed by its arguments. For information on a specific command, use /query help COMMAND"
             )
 
-        @Local()
+        @Local(print_dataset=False)
         def localallfuncs(_):
             """
             `allfuncs` - Debugging command for listing all functions, including hidden ones.
@@ -365,14 +365,14 @@ class Runtime(Component):
             for i, comlist in enumerate(comlists):
                 self.add_result(f"Functions with priority {len(comlists)-i}:", ", ".join(comlist.keys()))
 
-        @Local()
+        @Local(print_dataset=False)
         def localinfo(_):
             """
             `info` - Gets information on the current dataset being used.
             """
             self.add_result(dataset.info())
 
-        @Local()
+        @Local(print_dataset=False)
         def localdetailedinfo(l: Dataset):
             """
             `detailedinfo` - for getting info on the current dataset.
@@ -397,20 +397,20 @@ class Runtime(Component):
             """
             return l.clone(list(PlayerManager(l.l).players.values()))
 
-        @Local()
+        @Local(print_dataset=False)
         def localexamples(_):
             """
             `examples` - Prints some examples.
             """
             self.add_result(get_examples())
 
-        @Local()
+        @Local(print_dataset=False)
         def localdebugsplits(l: Dataset):
             ex = l.example()
             assert type(ex) == QueryMatch
             self.add_result(str(ex.timelines))
 
-        @Local()
+        @Local(print_dataset=False)
         def localhelp(_, arg=None):
             """
             `help(command)` - If `command` is not given, prints general help.
@@ -506,7 +506,7 @@ class Runtime(Component):
                 return l.l[b:int(a)]
             return l.l[b:]
 
-        @Local()
+        @Local(print_dataset=False)
         def localaverage(l: Dataset, val, *args):
             """
             `average(attribute)` - Compute the average value of an attribute across a dataset.
@@ -544,7 +544,7 @@ class Runtime(Component):
                 avg_dict[key_extractor(o)].append(value_extractor(o))
             return [tuple([k, t(average(v))]) for k, v in avg_dict.items()]
 
-        @Local()
+        @Local(print_dataset=False)
         def localcount(l: Dataset):
             """
             `count` - Returns the current dataset size.
@@ -621,7 +621,7 @@ class Runtime(Component):
                 return e.__slots__
             return [x for x in dir(e) if not x.startswith("_")]
 
-        @Local()
+        @Local(print_dataset=False)
         def localattrs(l: Dataset):
             """
             `attrs` - List the attributes that are available for the current datatype.
@@ -630,7 +630,7 @@ class Runtime(Component):
             example = l.l[0]
             self.add_result(f"Known accessible attributes of {type(example)}: " + ", ".join(getslots(example)))
 
-        @Local()
+        @Local(print_dataset=False)
         def localexample(l: Dataset, attribute=None):
             """
             `example(attribute)` - If `attribute` is provided, provides an example value for that attribute. Otherwise,
@@ -649,7 +649,7 @@ class Runtime(Component):
                         d[k] = "List[...]"
                 self.add_result(f"Example object layout: {d}")
 
-        @Local()
+        @Local(print_dataset=False)
         def localexampleinfo(l: Dataset):
             inf = list()
 
@@ -899,7 +899,10 @@ class Runtime(Component):
             if not pipeline:
                 # Determine if this is terminal.
                 self.log("Completed execution. Info:", dataset.info())
-                return dataset
+                if exe.executor.print_dataset:
+                    return dataset
+                else:
+                    return None
 
         self.log("Completed execution. Info:", dataset.info())
         return dataset

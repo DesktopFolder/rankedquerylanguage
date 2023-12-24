@@ -52,6 +52,7 @@ class Query(Component):
 
         # Finally, get the result of program execution.
         self.result = self.runtime.execute(self.program, self.parameters)
+        # This _result is our add_result calls in a list!!
         self._result = self.runtime._result
 
         self.log_time("Full query")

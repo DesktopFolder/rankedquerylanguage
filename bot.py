@@ -16,7 +16,7 @@ class QueryEngine:
             return self.formatter["clean"](s)
         return s
 
-    def run(self, query: str, debug: bool = False, timing: bool = False, is_bot: bool = False, no_mq: bool = False):
+    def run(self, query: str, debug: bool = False, timing: bool = False, is_bot: bool = False, no_mq: bool = False) -> dict:
         """Run a query within a sandbox.
         
         debug - passed on to sandbox.Query
@@ -25,42 +25,78 @@ class QueryEngine:
         """
         sb = sandbox.Query(query, debug, timing, self.formatter, no_mq=no_mq)
 
+        """
+        {"file": FILE_DATA, "literal": PRINTED_DATA}
+        """
+
+
         def format_result(s: str):
             if is_bot and sb.runtime and sb.runtime.notes:
                 fmt_notes = "\n".join([f"Note: {self.clean(note)}" for note in sb.runtime.notes])
                 return f"{fmt_notes}\n{s}"
             return s
 
+
+        def build_literal(lits: list[str]|None, file=None):
+            d = dict()
+            if lits is not None:
+                d = {"literal": "\n".join([format_result(str(s)) for s in lits])}
+            if file is not None:
+                d["file"] = file
+            return d
+
+
+        def build_result(result):
+            file = None
+            additional = sb._result
+            upload = sb._do_upload
+            if upload:
+                if result is None:
+                    additional = additional or list()
+                    additional.append("Error: No dataset was actionable for upload.")
+                elif not isinstance(result.l, list):
+                    additional = additional or list()
+                    additional.append(f"Error: {type(result.l)} (resulting dataset type) cannot be uploaded.")
+                else:
+                    file = result.l
+
+            # result: resulting dataset
+            # additional: misc warnings etc
+            # file: resulting dataset except it's a file
+            # all should not be None. handle that first.
+            assert not all([x is None for x in [result, file, additional]])
+
+            # OK. We want lits=[additional, result.summarize()]
+            if file and not additional:
+                return build_literal(None, file)
+
+            additional = additional or list()
+
+            if not file and result is not None:
+                additional.append(result.summarize())
+
+            return build_literal(additional, file)
+
+
         try:
-            result = sb.run()
-            if sb._do_upload:
-                if sb._result is not None:
-                    return sb._result
-                if type(result.l) is not list:
-                    return format_result("This could not be made into a file.")
-                return result.l
-            if sb._result is not None:
-                return format_result("\n".join(sb._result))
-            if self.formatter is not None:
-                # TODO - maybe format discord here idk man
-                return format_result(f"{result.summarize()}")
-            return format_result(f"{result.summarize()}")
+            return build_result(sb.run())
+        # ALL ERROR HANDLING BELOW HERE.
         except ParseError as e:
             extra = "\nIt looks like your query failed to parse. "
             extra += "Try `/query help` to get some examples."
             if sb._tracebacks:
                 import traceback
 
-                return format_result(f"{traceback.format_exc().rstrip()}{extra}")
+                return {"literal": format_result(f"{traceback.format_exc().rstrip()}{extra}")}
             else:
-                return format_result(f"Error: {e}{extra}")
+                return {"literal": format_result(f"Error: {e}{extra}")}
         except Exception as e:
             if sb._tracebacks:
                 import traceback
 
-                return format_result(f"{traceback.format_exc().rstrip()}")
+                return {"literal": format_result(f"{traceback.format_exc().rstrip()}")}
             else:
-                return format_result(f"Error: {e}")
+                return {"literal": format_result(f"Error: {e}")}
 
 
 ENGINE = QueryEngine()
@@ -118,29 +154,29 @@ async def run_discord_query(interaction: discord.Interaction, query: str, notes=
     resp = ENGINE.run(query, False, False, True)
     print("Bot finished running query:", query)
     notes = "" if notes is None else "\n" + "\nNote: ".join(notes)
+    literal = "" if "literal" not in resp else f"\n{resp['literal']}"
     try:
-        if type(resp) is list:
+        if "file" in resp:
             # Attempt string conversion. LOL this might be a bad idea.
             s = str()
             one_gb = 2 * 1024 * 1024 * 1024
             from klunk import dataset
 
-            for l in resp:
+            for l in resp["file"]:
                 s += dataset.format_str(l)
                 s += "\n"
                 if len(s) > one_gb:
-                    await interaction.followup.send(f"From query: `{query}`: Failed to upload, too large (>2gb)")
+                    await interaction.followup.send(f"From query: `{query}`: Failed to upload, too large (>2gb){notes}{literal}")
                     return
             s = s.encode("utf-8")
-            await interaction.followup.send(f"From query: `{query}`{notes}", file=discord.File(BytesIO(s), "result.txt"))
+            await interaction.followup.send(f"From query: `{query}`{notes}{literal}", file=discord.File(BytesIO(s), "result.txt"))
         else:
-            s = str(resp)
-            if len(s) > 2000:
+            if len(literal) > 2000:
                 await interaction.followup.send(
-                    f"Your query has a result size of {len(s)} characters, which is too long. Try with +asfile| at the start."
+                    f"Your query has a result size of {len(literal)} characters, which is too long. Try with +asfile| at the start."
                 )
             else:
-                await interaction.followup.send(f"From query: `{query}`:{notes}\n{resp}")
+                await interaction.followup.send(f"From query: `{query}`:{notes}{literal}")
     except Exception as e:
         print(f"Failed to send response to /query - likely it took too long: {e}.")
 
@@ -245,7 +281,7 @@ def run_cli():
             elif query == "-debug":
                 print_debug = False
             else:
-                print(ENGINE.run(query, print_debug, no_mq=True))
+                print(ENGINE.run(query, print_debug, no_mq=True).get("literal", "Query had no result as only a file was produced."))
         except EOFError:
             break
 
