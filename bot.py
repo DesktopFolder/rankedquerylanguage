@@ -75,7 +75,7 @@ class QueryEngine:
             additional = additional or list()
 
             if not file and result is not None:
-                additional.append(result.summarize())
+                additional.append(result.summarize(formatter=self.formatter))
 
             return build_literal(additional, file)
 

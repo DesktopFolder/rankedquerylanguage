@@ -238,20 +238,24 @@ class Dataset:
     def detailed_info(self):
         return f"Dataset {self.name}. Contains {len(self)} items. Type of first item: {type(self.example())}"
 
-    def summarize(self):
+    def summarize(self, formatter=None):
+        def cleaned(s):
+            if formatter is not None and 'clean' in formatter:
+                return formatter["clean"](s)
+            return s
         val = self.l
         if type(val) == dict:
             val = list(val.items())
         if isinstance(val, list):
             length = len(val)
             if length == 1:
-                return format_str(val[0])
-            res = "\n".join([f"{i+1}. {format_str(v)}" for i, v in enumerate(val[0:10])])
+                return cleaned(format_str(val[0]))
+            res = cleaned("\n".join([f"{i+1}. {format_str(v)}" for i, v in enumerate(val[0:10])]))
             if length > 10:
                 res += f"\n... ({length - 10} values trimmed)"
             return res
         if type(val) == str:
-            return val
+            return cleaned(val)
 
     def example(self):
         if type(self.l) in SUPPORTED_ITERABLES:
