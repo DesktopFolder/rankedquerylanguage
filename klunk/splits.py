@@ -48,26 +48,34 @@ def get_split(l: list[Timeline], split_id: str):
 
 @Split
 def filter(ds: Dataset, *args):
+    """
+    `splits.filter(args)` - Honestly I don't remember what this does.
+    Here's the code if you want to figure it out, lol:
+    `[[y for y in x if any([split_eq(real=y.id, query=a) for a in args])] for x in ds.l]`
+    """
     return [[y for y in x if any([split_eq(real=y.id, query=a) for a in args])] for x in ds.l]
 
 
 @Split
 def has(ds: Dataset, split_id: str):
     """
-    has(split_id) - todo - support multiple ids
+    `splits.has(split_id)` - todo - support multiple ids
     """
     return [s for s in ds.l if has_split(s, split_id)]
 
 
 @Split
 def get(ds: Dataset, split_id: str):
+    """
+    `splits.get(split_id)` - Don't use this. You probably want splits.get_if. This one gives you None if the split doesn't exist. That one just drops such results. Better!
+    """
     return [get_split(s, split_id) for s in ds.l]
 
 
 @Split
 def get_if(ds: Dataset, split_id: str):
     """
-    `get_if(split_id)` - Gets a split, if it exists.
+    `splits.get_if(split_id)` - Gets a split, if it exists.
     """
     l = list()
     for s in ds.l:
@@ -103,4 +111,8 @@ def diff(ds: Dataset, split_id_lt: str, split_id_gt: str):
 
 @Split
 def dump_ids(ds: Dataset):
+    """
+    `splits.dump_ids` - Gives you the IDs of all splits in your list of splits.
+    This is just for debugging. You probably don't need or want it.
+    """
     return [[split.id for split in l] for l in ds.l]

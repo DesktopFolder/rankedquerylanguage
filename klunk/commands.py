@@ -18,6 +18,8 @@ class Executor:
         self.greedy = greedy
         self.print_dataset = print_dataset
 
+        self.help = func.__doc__
+
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
 
@@ -70,6 +72,9 @@ def _command_wait(_, dura: str):
 
 @Command
 def _command_testlog(_, msg: str):
+    """
+    `testlog` - Super duper for testing. Why can you even use this?
+    """
     if logger is None:
         raise RuntimeError(f"Could not log {msg} as logger was None.")
     logger.log(msg)
@@ -77,6 +82,10 @@ def _command_testlog(_, msg: str):
 
 @Command
 def _command_count_uniques(d: Dataset, val: str | None = None):
+    """
+    `count_uniques` - Essentially, takes all the objects in the current list, and counts unique occurrences of them.
+    Only works if the objects are hashable. If you have a use case to add that to something, let me know
+    """
     if val is None:
         return Counter(d.l).get()
     raise RuntimeError("count_uniques does not support arguments yet.")
@@ -84,6 +93,9 @@ def _command_count_uniques(d: Dataset, val: str | None = None):
 
 @Command
 def _command_randomselect(d: Dataset, val: str):
+    """
+    `randomselect(n)` - Returns a random sample of `n` size of the current dataset.
+    """
     import random
 
     return random.sample(d.l, k=int(val))
@@ -101,5 +113,12 @@ def _command_dropn(d: Dataset, val: str):
 def _command_flatten(d: Dataset):
     """
     `flatten` - flattens lists of lists.
+    """
+    return [x for y in d.l for x in y]
+
+@Command
+def _command_enumerate(d: Dataset):
+    """
+    `enumerate` - flattens lists of lists.
     """
     return [x for y in d.l for x in y]

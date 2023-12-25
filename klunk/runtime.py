@@ -215,14 +215,22 @@ class Runtime(Component):
 
         @Local()
         def localdebugecho(_, *args, **kwargs):
+            """
+            `debugecho` - Gives you information on how arguments are seen. You do not need this.
+            """
             self.add_result(f"Args: {args}, kwargs: {kwargs}")
 
         @Local(print_dataset=False)
         def localvalidate(_):
+            """
+            `validate` - Completely useless to you. Currently.
+            """
             for i, comlist in enumerate(comlists):
                 for executor in comlist.values():
                     if not isinstance(executor, commands.Executor):
                         print(f'Bad command: {executor} in list {i}')
+                    elif executor.help is None:
+                        print(f'Function with no help info: {executor.func}')
 
         @Local()
         def localmakelist(_, name: str, item_type: str, *args):
@@ -258,6 +266,19 @@ class Runtime(Component):
 
         @Local()
         def localapplymappeddata(d: Dataset, name: str, by: str):
+            """
+            `applymappeddata(name, by)` - Assumes that `name` refers to a variable (created with `assign`)
+            which is a list of 2-tuples or otherwise convertible to a dictionary.
+            Then, applies the *values* of the 2-tuples to each object in the dataset
+            if object.`by` matches the *key* of the 2-tuple.
+            Example: If the dataset has a `Player` with `uuid = 123abc`, and you have the variable
+            `uuidlist` that looks like `[('123abc', '64')]`, then `applymappeddata uuidlist uuid`
+            would give that `Player` object a 'dynamically assigned value' of `64`.
+            Currently, only one dynamically assigned value can be given at once. This is a runtime limitation.
+            This is useful if you want to associate two different pieces of data together.
+            Example: `index most | filter noff | drop duration gt(600000) | extract winner | count_uniques | assign subx | index most | players | applymappeddata subx uuid | extract uuid rql_dynamic rql_completions | drop 1 None() | rsort 1`
+            With explanation here: https://discord.com/channels/1056779246728658984/1074343944822992966/1187206790149058671
+            """
             example = d.example()
             if not hasattr(example, "dynamic"):
                 raise RuntimeError(
@@ -279,6 +300,12 @@ class Runtime(Component):
 
         @Local()
         def localkeepifattrcontained(d: Dataset, attr: str, variable: str):
+            """
+            `keepifattrcontained(attr, variable)` - Essentially, for each object in the dataset,
+            checks if `object.attr` is present within the variable `variable`.
+            This can be used to do multi-filtering with `makelist`, for example if you wanted
+            to create a list of players that you want 'any of the victories from'.
+            """
             if variable not in varlist:
                 raise RuntimeError(f"Variable name {variable} does not exist. For a list, see `vars`.")
             s = set(varlist[variable])
@@ -390,6 +417,9 @@ class Runtime(Component):
 
         @Local(print_dataset=False)
         def localdebugsplits(l: Dataset):
+            """
+            `debugsplits` - More debugging. Carry on, friend.
+            """
             ex = l.example()
             assert type(ex) == QueryMatch
             self.add_result(str(ex.timelines))
@@ -407,7 +437,7 @@ class Runtime(Component):
             if com is None:
                 self.add_result(f'{self.format(arg, "tick")} is not a valid command.')
                 return
-            self.add_result(self.format(com.__doc__, "doc"))
+            self.add_result(self.format(com.help, "doc"))
 
         @Local()
         def localsort(d: Dataset, attribute, **kwargs):
@@ -429,6 +459,11 @@ class Runtime(Component):
 
         @Local()
         def localraw(d: Dataset, *attributes):
+            """
+            `raw` - Turns strongly typed things into their string representations.
+            Useful if you want to print UUIDs or timestamps for debugging or other purposes.
+            (Otherwise, UUIDs or timestamps etc are always nicely formatted on printing)
+            """
             ex = d.example()
             setters = [SmartReplacer(ex, attribute) for attribute in attributes]
             getters = [SmartExtractor(ex, attribute) for attribute in attributes]
@@ -635,6 +670,9 @@ class Runtime(Component):
 
         @Local(print_dataset=False)
         def localexampleinfo(l: Dataset):
+            """
+            `exampleinfo` - Creates example information, what more do you want?
+            """
             inf = list()
 
             def add_info(n, l, o):
@@ -672,6 +710,11 @@ class Runtime(Component):
 
         @Local()
         def localdrop_list(d: Dataset, value: str):
+            """
+            `drop_list(value)` - If `value` is `"empty"`, filters the dataset to remove any objects
+            where `len(object) == 0`.
+            Otherwise, fails unhelpfully.
+            """
             if value == "empty":
                 return d.clone([x for x in d.l if len(x) != 0])
             raise RuntimeError(f"Could not find drop parameter {value}")
@@ -706,6 +749,9 @@ class Runtime(Component):
 
         @Local()
         def localtest_list(d: Dataset, attribute, operation, destination=None):
+            """
+            `test_list` - Frankly, it says test in the name, I'm not going to bother figuring out what it does for you.
+            """
             # see filter for more details on how this will work in the future lol
             if operation == "abs_diff":
 
@@ -839,6 +885,9 @@ class Runtime(Component):
 
         @Local()
         def localjob(l, job: tuple[str, str]):
+            """
+            `job(arguments...)` - Executes a job. I don't know. Why did I add this. I need help.
+            """
             if type(job) != tuple:
                 raise RuntimeError(f"Job {job} was provided without an argument list.")
             return jobs.execute(job, l=l, varlist=varlist)
