@@ -117,8 +117,12 @@ def _command_flatten(d: Dataset):
     return [x for y in d.l for x in y]
 
 @Command
-def _command_enumerate(d: Dataset):
+def _command_enumerate(d: Dataset, base='1'):
     """
-    `enumerate` - flattens lists of lists.
+    `enumerate(base = 1)` - takes a list of items with `dynamic` capabilities,
+    and assigns `i` to dynamic[default], where `i` is current position + base.
+    You can do `extract dynamic` to get the data back.
     """
-    return [x for y in d.l for x in y]
+    for i, v in enumerate(d.l):
+        v.dynamic = v.dynamic or dict()
+        v.dynamic["default"] = i 

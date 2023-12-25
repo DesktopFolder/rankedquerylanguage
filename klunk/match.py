@@ -171,6 +171,7 @@ class QueryMatch:
         "has_elos",  # debug; has score_changes and it's good
         "was_fixed",  # debug; timelines used to fix duration
         "is_abnormal",
+        "dynamic", # meta - store arbitrary data.
     )
 
     @staticmethod
@@ -215,6 +216,7 @@ class QueryMatch:
         assert self.is_decay is not None
         # TIMELINE LIST IS SORTED BY DEFAULT. THIS IS A GOOD THING.
         self.timelines = TimelineList(sorted([Timeline(tl) for tl in (m["timelines"] or list())], key=lambda tl: tl.time))
+        self.dynamic: None | dict = None
 
         self.scored = m["score_changes"] is not None and len(m["score_changes"]) > 0
         self.was_fixed = False
@@ -261,6 +263,11 @@ class QueryMatch:
 
     def rql_is_completed(self):
         return not self.rql_is_draw() and not self.is_ff
+
+    def rql_dynamic(self, key="default"):
+        if self.dynamic is None:
+            raise RuntimeError(f'Cannot extract dynamic data... it has not been set.')
+        return self.dynamic[key]
 
     def extract(self, t: str):
         ex = _extract(self, t)
