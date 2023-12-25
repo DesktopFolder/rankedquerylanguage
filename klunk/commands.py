@@ -123,6 +123,9 @@ def _command_enumerate(d: Dataset, base='1'):
     and assigns `i` to dynamic[default], where `i` is current position + base.
     You can do `extract dynamic` to get the data back.
     """
+    if not base.isdigit():
+        raise RuntimeError(f'{base} is not a valid number (`enumerate {base}`).')
+    base = int(base)
     for i, v in enumerate(d.l):
         v.dynamic = v.dynamic or dict()
-        v.dynamic["default"] = i 
+        v.dynamic["default"] = i + base
