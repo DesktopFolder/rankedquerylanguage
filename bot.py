@@ -221,21 +221,30 @@ async def qb_info(interaction: discord.Interaction):
 @app_commands.describe(
     value="The type of leaderboard you want to generate.",
     season="The season to generate a leaderboard for. By default, the current season.",
+    player="The player you want to get the leaderboard position of (otherwise gets top 10)",
 )
-async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.Choice[str], season: int | None = None):
+async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.Choice[str], season: int | None = None, player: str | None = None):
     leaderboard_queries = {
         "pb": "filter noff | drop duration lt(332324) | sort duration | take 10 | extract id date winner duration",
+        "pb@player": f"filter noff | duration lt(332324) | sort duration | enumerate | filter winner({player}) | extract rql_dynamic id date winner duration",
         "elo": "players | drop elo None() | rsort elo | take 10",
+        "elo@player": f"players | drop elo None() | rsort elo | enumerate | filter uuid({player}) | extract rql_dynamic uuid elo",
         "average_completion": "players | drop average_completion None() | sort average_completion | take 10 | extract nick average_completion match_completions",
+        "average_completion@player": f"players | drop average_completion None() | sort average_completion | enumerate | filter uuid({player}) | extract rql_dynamic nick average_completion match_completions",
     }
     v = value.value
     if v not in leaderboard_queries:
         await interaction.response.send_message(f"Your value of {v} is not a valid choice.")
-    else:
-        query = leaderboard_queries[value.value]
-        if season is not None:
-            query = f"index s{season} | {query}"
-        await run_discord_query(interaction, query)
+        return
+
+    if player is not None:
+        v = v + '@player'
+
+    query = leaderboard_queries[v]
+    if season is not None:
+        query = f"index s{season} | {query}"
+
+    await run_discord_query(interaction, query)
 
 
 @client.tree.command()
