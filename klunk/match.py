@@ -10,6 +10,22 @@ NON_ABNORMAL_PLAYERS = {
         'lowk3y_', 'dandannyboy', '7rowl', 'v_strid', 'NoFearr1337', 'Oxidiot', 'Waluyoshi'
 }
 
+def is_abnormal(m):
+    # Immediately exit out if we're not completed or too short anyways
+    if not m.rql_completed() or m.duration > ABNORMAL_MATCH_MS:
+        return False
+
+    # Also check for known good players.
+    try:
+        # This is in a try-catch block because IT TURNS OUT there are corrupted matches
+        # where the winner of the match is just some random uuid (???) not a member.
+        if m.get_member(m.winner).user in NON_ABNORMAL_PLAYERS:
+            return False
+    except:
+        pass
+
+    return True
+
 def type_str(t: int):
     return {1: "Casual", 2: "Ranked", 3: "Private", 4: "Event"}[t]
 
@@ -112,6 +128,9 @@ class UUIDList(list):
 
     def basic_repr(self):
         return "".join(sorted([m.uuid for m in self]))
+
+    def __str__(self):
+        return f'UUIDList ({len(self)} elements): {", ".join([str((m.uuid, m.user)) for m in self])}'
 
     def __eq__(self, other):
         # We care if the list is 'relevantly same' for now
@@ -222,6 +241,10 @@ class QueryMatch:
         self.timelines = TimelineList(sorted([Timeline(tl) for tl in (m["timelines"] or list())], key=lambda tl: tl.time))
         self.dynamic: None | dict = None
 
+        if self.id == 21109:
+            print(self.members)
+            print(self.winner)
+
         self.scored = m["score_changes"] is not None and len(m["score_changes"]) > 0
         self.was_fixed = False
         if "timelines" in m and m["timelines"]:
@@ -229,10 +252,11 @@ class QueryMatch:
             if s > self.duration:
                 self.was_fixed = True
                 self.duration = s
+
         self.is_abnormal = False
         # Checking for abnormal matches.
         # Mainly, there are non-ff matches that have 0 duration.
-        if self.rql_completed() and self.duration < ABNORMAL_MATCH_MS and not self.get_member(self.winner).user in NON_ABNORMAL_PLAYERS:
+        if is_abnormal(self):
             # No cheated matches in S2 but there are in S3, so.
             self.is_abnormal = True
 
@@ -280,8 +304,10 @@ class QueryMatch:
         return ex
 
     def get_member(self, uuid):
+        # Note to self - this does UUID comparisons properly.
+        # If this is crashing, you're probably checking corrupted matches.
         for m in self.members:
-            if m["uuid"] == uuid:
+            if m.uuid == uuid:
                 return m
         raise ValueError(f"Could not find uuid {uuid} in match ID {self.id}")
 
