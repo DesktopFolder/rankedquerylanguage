@@ -225,8 +225,8 @@ async def qb_info(interaction: discord.Interaction):
 )
 async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.Choice[str], season: int | None = None, player: str | None = None):
     leaderboard_queries = {
-        "pb": "filter noff | drop duration lt(332324) | sort duration | take 10 | extract id date winner duration",
-        "pb@player": f"filter noff | drop duration lt(332324) | sort duration | enumerate | filter winner({player}) | extract rql_dynamic id date winner duration",
+        "pb": "filter noff | sort duration | take 10 | extract id date winner duration",
+        "pb@player": f"filter noff | sort duration | enumerate | filter winner({player}) | extract rql_dynamic id date winner duration",
         "elo": "players | drop elo None() | rsort elo | take 10",
         "elo@player": f"players | drop elo None() | rsort elo | enumerate | filter uuid({player}) | extract rql_dynamic uuid elo",
         "average_completion": "players | drop average_completion None() | sort average_completion | take 10 | extract nick average_completion match_completions",

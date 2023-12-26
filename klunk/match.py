@@ -5,6 +5,10 @@ from .extra_types import *
 
 ABNORMAL_MATCH_MS = 7 * 60 * 1000
 
+# Just this season's top few completions' players.
+NON_ABNORMAL_PLAYERS = {
+        'lowk3y_', 'dandannyboy', '7rowl', 'v_strid', 'NoFearr1337', 'Oxidiot', 'Waluyoshi'
+}
 
 def type_str(t: int):
     return {1: "Casual", 2: "Ranked", 3: "Private", 4: "Event"}[t]
@@ -228,7 +232,7 @@ class QueryMatch:
         self.is_abnormal = False
         # Checking for abnormal matches.
         # Mainly, there are non-ff matches that have 0 duration.
-        if self.rql_completed() and self.duration < ABNORMAL_MATCH_MS:
+        if self.rql_completed() and self.duration < ABNORMAL_MATCH_MS and not self.get_member(self.winner).user in NON_ABNORMAL_PLAYERS:
             # No cheated matches in S2 but there are in S3, so.
             self.is_abnormal = True
 
