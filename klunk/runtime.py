@@ -65,6 +65,17 @@ def SmartExtractor(ex, v, *args):
 
     return extractor
 
+def AutoExtractor(d: Dataset, attribute: str, *args) -> tuple[Callable, type]:
+    """
+    Generates a Callable C(o) which returns o->attribute.
+    Also simultaneously returns the type that the extractor extracts.
+    """
+    # First, make the extractor.
+    example = d.example()
+    extractor = SmartExtractor(example, attribute, *args)
+
+    return (extractor, type(extractor(example)))
+
 
 def SmartReplacer(ex, a):
     # Creates and returns a smart replacer for ex
@@ -440,8 +451,11 @@ class Runtime(Component):
             `raw` - Turns strongly typed things into their string representations.
             Useful if you want to print UUIDs or timestamps for debugging or other purposes.
             (Otherwise, UUIDs or timestamps etc are always nicely formatted on printing)
+            Generally disabled except for if you are operating on a list of tuples.
             """
             ex = d.example()
+            if type(ex) != tuple:
+                raise RuntimeError('Sorry, `raw` currently only works on tuples. Try extracting then doing raw [index].')
             setters = [SmartReplacer(ex, attribute) for attribute in attributes]
             getters = [SmartExtractor(ex, attribute) for attribute in attributes]
             if type(d.l) in [list, set]:
@@ -704,17 +718,23 @@ class Runtime(Component):
             This is also a temporary solution for filter not being powerful enough.
             Later, it will be possible to just do `filter winner(not(desktopfolder))`
             """
-            extractor = SmartExtractor(d.example(), attribute)
+            extractor, t = AutoExtractor(d, attribute)
+            if not any([isinstance(t(), oktype) for oktype in [int, float, str]]):
+                raise RuntimeError(f'Comparisons to {t} in drop {attribute} are not supported yet.')
+            if isinstance(value, tuple):
+                value = (value[0], t(value[1]))
+            else:
+                value = t(value)
             if type(value) is tuple:
                 if value[0] == "None":
                     value = None
                 elif value[0] == "lt":
-                    return [x for x in d.l if extractor(x) >= int(value[1])]
+                    return [x for x in d.l if extractor(x) >= value[1]]
                 elif value[0] == "gt":
-                    return [x for x in d.l if extractor(x) <= int(value[1])]
+                    return [x for x in d.l if extractor(x) <= value[1]]
                 elif value[0] == "anylt":
                     a, b = attribute.split(".")
-                    return [x for x in d.l if all([y.extract(b) >= int(value[1]) for y in extractor(x)])]
+                    return [x for x in d.l if all([y.extract(b) >= value[1] for y in extractor(x)])]
                 elif value[0] == "test_winner_lower":
                     # lol, ok, whatever, language dev later sometime ig
                     return [

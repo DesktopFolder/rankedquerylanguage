@@ -10,6 +10,11 @@ __discord = False
 
 SUPPORTED_ITERABLES = set([list, dict, set, tuple, TimelineList])
 
+def first_not_none(l):
+    for x in l:
+        if x is not None:
+            return x
+    return None
 
 class PikaConnection:
     def __init__(self):
@@ -261,8 +266,8 @@ class Dataset:
         if type(self.l) in SUPPORTED_ITERABLES:
             try:
                 if type(self.l) == dict:
-                    return list(self.l.values())[0]
-                return self.l[0]
+                    return first_not_none(list(self.l.values()))
+                return first_not_none(self.l)
             except:
                 return None
         return self.l
