@@ -10,21 +10,36 @@ NON_ABNORMAL_PLAYERS = {
         'lowk3y_', 'dandannyboy', '7rowl', 'v_strid', 'NoFearr1337', 'Oxidiot', 'Waluyoshi'
 }
 
-def is_abnormal(m):
-    # Immediately exit out if we're not completed or too short anyways
-    if not m.rql_completed() or m.duration > ABNORMAL_MATCH_MS:
+def is_abnormal(m) -> bool:
+    """
+    is_abnormal(match)
+    Decides whether a match is ABNORMAL or LEGITIMATE.
+    See code for the process...
+    """
+
+    # If the match is not completed, we have no applicable checks.
+    # So, incomplete matches are always (!) legitimate, currently.
+    if not m.rql_completed():
         return False
 
-    # Also check for known good players.
-    try:
-        # This is in a try-catch block because IT TURNS OUT there are corrupted matches
-        # where the winner of the match is just some random uuid (???) not a member.
-        if m.get_member(m.winner).user in NON_ABNORMAL_PLAYERS:
-            return False
-    except:
-        pass
+    # If the winner is NOT a valid member, then this is glitched.
+    if m.winner not in [x.uuid for x in m.members]:
+        return True
 
-    return True
+    # If the duration is TOO SHORT, exit out. 
+    if m.duration <= ABNORMAL_MATCH_MS:
+        # Also check for known good players.
+        try:
+            # This is in a try-catch block because IT TURNS OUT there are corrupted matches
+            # where the winner of the match is just some random uuid (???) not a member.
+            if m.get_member(m.winner).user not in NON_ABNORMAL_PLAYERS:
+                # They're a cheater because their username is not lowk3y_
+                return True
+        except:
+            return True
+
+    # Match duration is good, winner is a valid player, etc. We're fine.
+    return False
 
 def type_str(t: int):
     return {1: "Casual", 2: "Ranked", 3: "Private", 4: "Event"}[t]
@@ -240,10 +255,6 @@ class QueryMatch:
         # TIMELINE LIST IS SORTED BY DEFAULT. THIS IS A GOOD THING.
         self.timelines = TimelineList(sorted([Timeline(tl) for tl in (m["timelines"] or list())], key=lambda tl: tl.time))
         self.dynamic: None | dict = None
-
-        if self.id == 21109:
-            print(self.members)
-            print(self.winner)
 
         self.scored = m["score_changes"] is not None and len(m["score_changes"]) > 0
         self.was_fixed = False

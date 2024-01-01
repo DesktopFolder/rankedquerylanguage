@@ -220,6 +220,11 @@ class Dataset:
     def has_iterable(self):
         return type(self.l) in SUPPORTED_ITERABLES
 
+    def iter(self):
+        if self.has_iterable():
+            return iter(self.l)
+        return [self.l]
+
     def clone(self, l):
         return Dataset(self.name, l)
 

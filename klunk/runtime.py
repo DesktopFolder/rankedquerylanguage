@@ -74,7 +74,12 @@ def AutoExtractor(d: Dataset, attribute: str, *args) -> tuple[Callable, type]:
     example = d.example()
     extractor = SmartExtractor(example, attribute, *args)
 
-    return (extractor, type(extractor(example)))
+    for instance in d.iter():
+        extracted = extractor(instance)
+        if extracted is not None:
+            return (extractor, type(extracted))
+
+    return (extractor, type(None))
 
 
 def SmartReplacer(ex, a):
@@ -719,10 +724,15 @@ class Runtime(Component):
             Later, it will be possible to just do `filter winner(not(desktopfolder))`
             """
             extractor, t = AutoExtractor(d, attribute)
+            if t() is None:
+                raise RuntimeError(f'All values for {attribute} are `None` in | drop {attribute} {value}')
             if not any([isinstance(t(), oktype) for oktype in [int, float, str]]):
                 raise RuntimeError(f'Comparisons to {t} in drop {attribute} are not supported yet.')
             if isinstance(value, tuple):
-                value = (value[0], t(value[1]))
+                if value[1] != '':
+                    value = (value[0], t(value[1]))
+                else:
+                    value = (value[0], None)
             else:
                 value = t(value)
             if type(value) is tuple:
