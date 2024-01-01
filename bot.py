@@ -216,6 +216,14 @@ async def qb_info(interaction: discord.Interaction):
         app_commands.Choice(name="Fastest Completions", value="pb"),
         app_commands.Choice(name="Elo", value="elo"),
         app_commands.Choice(name="Average Completion", value="average_completion"),
+    ],
+    seed_type=[
+        app_commands.Choice(name="None", value=""),
+        app_commands.Choice(name="Village", value="filter seed_type(village) | "),
+        app_commands.Choice(name="Desert Temple", value="filter seed_type(desert_temple) | "),
+        app_commands.Choice(name="Shipwreck", value="filter seed_type(shipwreck) | "),
+        app_commands.Choice(name="Ruined Portal", value="filter seed_type(ruined_portal) | "),
+        app_commands.Choice(name="Buried Treasure", value="filter seed_type(buried_treasure) | "),
     ]
 )
 @app_commands.describe(
@@ -223,14 +231,18 @@ async def qb_info(interaction: discord.Interaction):
     season="The season to generate a leaderboard for. By default, the current season.",
     player="The player you want to get the leaderboard position of (otherwise gets top 10)",
 )
-async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.Choice[str], season: int | None = None, player: str | None = None):
+async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.Choice[str], season: int | None = None, player: str | None = None, seed_type: app_commands.Choice[str] | None = None):
+    if seed_type is None:
+        ststr = ""
+    else:
+        ststr = seed_type.value
     leaderboard_queries = {
-        "pb": "filter noff | sort duration | take 10 | extract id date winner duration",
-        "pb@player": f"filter noff | sort duration | enumerate | filter winner({player}) | extract rql_dynamic id date winner duration",
-        "elo": "players | drop elo None() | rsort elo | take 10",
-        "elo@player": f"players | drop elo None() | rsort elo | enumerate | filter uuid({player}) | extract rql_dynamic uuid elo",
-        "average_completion": "players | drop average_completion None() | sort average_completion | take 10 | extract nick average_completion match_completions",
-        "average_completion@player": f"players | drop average_completion None() | sort average_completion | enumerate | filter uuid({player}) | extract rql_dynamic nick average_completion match_completions",
+        "pb": f"{ststr}filter noff | sort duration | take 10 | extract id date winner duration",
+        "pb@player": f"{ststr}filter noff{ststr} | sort duration | enumerate | filter winner({player}) | extract rql_dynamic id date winner duration",
+        "elo": f"{ststr}players | drop elo None() | rsort elo | take 10",
+        "elo@player": f"{ststr}players | drop elo None() | rsort elo | enumerate | filter uuid({player}) | extract rql_dynamic uuid elo",
+        "average_completion": f"{ststr}players | drop average_completion None() | sort average_completion | take 10 | extract nick average_completion match_completions",
+        "average_completion@player": f"{ststr}players | drop average_completion None() | sort average_completion | enumerate | filter uuid({player}) | extract rql_dynamic nick average_completion match_completions",
     }
     v = value.value
     if v not in leaderboard_queries:
