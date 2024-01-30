@@ -238,7 +238,7 @@ async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.C
         ststr = seed_type.value
     leaderboard_queries = {
         "pb": f"{ststr}filter noff | sort duration | take 10 | extract id date winner duration",
-        "pb@player": f"{ststr}filter noff{ststr} | sort duration | enumerate | filter winner({player}) | extract rql_dynamic id date winner duration",
+        "pb@player": f"{ststr}filter noff | sort duration | enumerate | filter winner({player}) | extract rql_dynamic id date winner duration",
         "elo": f"{ststr}players | drop elo None() | rsort elo | take 10",
         "elo@player": f"{ststr}players | drop elo None() | rsort elo | enumerate | filter uuid({player}) | extract rql_dynamic uuid elo",
         "average_completion": f"{ststr}players | drop average_completion None() | sort average_completion | take 10 | extract nick average_completion match_completions",
