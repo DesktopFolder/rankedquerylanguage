@@ -67,6 +67,7 @@ class PikaConnection:
     def update_datasets(self):
         global _datasets_
         if self.connection is None:
+            print('did not update datasets: no connection')
             return
         self.attempt_process_pika()
 

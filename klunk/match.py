@@ -73,7 +73,7 @@ class MatchMember:
     def __init__(self, match_member: dict[str, Any]):
         self.uuid: str = UUID(match_member["uuid"])
         self.user: str = match_member["nickname"]
-        self.badge: int = match_member["badge"]
+        self.badge: int = match_member.get('badge', match_member.get('roleType'))
         self.old_elo: int = match_member["elo_rate"]
         self.old_rank: int = match_member["elo_rank"]
         self.elo = None
