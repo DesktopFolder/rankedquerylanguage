@@ -310,7 +310,9 @@ def GetUserMappings(l: list[QueryMatch]):
             users[p.user.lower()] = p.uuid
             uuids[p.uuid] = p.user
     uuids["__draw"] = "Drawn Match"
+    uuids["__decay"] = "Decayed Match"
     users["drawn match"] = "__draw"
+    users["decayed match"] = "__decay"
     return uuids, users
 
 

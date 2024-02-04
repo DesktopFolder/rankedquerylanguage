@@ -244,7 +244,7 @@ class QueryMatch:
         self.id: int = m["match_id"]  # FILTER: Basic
         self.seed_type: str = m["seed_type"]  # FILTER: Basic
         self.type: int = m["match_type"]  # FILTER: Translation
-        self.winner: UUID = UUID(m["winner"]) if m["winner"] is not None else UUID("__draw")
+        self.winner: UUID = UUID(m["winner"]) if m["winner"] is not None else (UUID("__draw") if not m["is_decay"] else UUID("__decay"))
         self.members = UUIDList([MatchMember(mem) for mem in m["members"]])
         self.duration: Milliseconds = Milliseconds(m["final_time"])
         self.is_ff = m["forfeit"]
@@ -298,6 +298,7 @@ class QueryMatch:
         return self.get_member(self.winner)
 
     def rql_completed(self):
+        # NOTE - Draws are now marked as ff and weren't before.
         return not self.rql_is_draw() and not self.is_ff
 
     def rql_is_completed(self):

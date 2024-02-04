@@ -1,3 +1,9 @@
+### BUG FIXES!
+
+- `filter decay | extract winner` -> drawn matches?
+
+---
+
 - randomselect
 - dumpjson
 - raw

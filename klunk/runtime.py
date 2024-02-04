@@ -65,7 +65,7 @@ def SmartExtractor(ex, v, *args):
 
     return extractor
 
-def AutoExtractor(d: Dataset, attribute: str, *args) -> tuple[Callable, type]:
+def AutoExtractor(d: Dataset, attribute: str, *args, no_none=True, allowed=None) -> tuple[Callable, type]:
     """
     Generates a Callable C(o) which returns o->attribute.
     Also simultaneously returns the type that the extractor extracts.
@@ -77,9 +77,27 @@ def AutoExtractor(d: Dataset, attribute: str, *args) -> tuple[Callable, type]:
     for instance in d.iter():
         extracted = extractor(instance)
         if extracted is not None:
-            return (extractor, type(extracted))
+            t = type(extracted)
+            if allowed is not None:
+                if not any([isinstance(t(), oktype) for oktype in allowed]):
+                    raise RuntimeError(f'Could not extract {attribute} from {type(example)}: type {t} is not a permitted type ({allowed})')
+            return (extractor, t)
 
+    if no_none:
+        raise RuntimeError(f'Could not determine how to extract {attribute} from {type(example)}: all instances of this attribute are None.')
+    if allowed is not None and None not in allowed:
+        raise RuntimeError(f'Could not extract {attribute} from {type(example)}: type None is not a permitted type ({allowed})')
     return (extractor, type(None))
+
+
+def FullExtractor(d: Dataset, attribute: str, *args, **kwargs):
+    """
+    A full-featured extractor that also yields over the results.
+    You don't have to write logic! That's great.
+    """
+    e, t = AutoExtractor(d, attribute, *args, **kwargs)
+    for val in d.l:
+        yield t(e(val))
 
 
 def SmartReplacer(ex, a):
@@ -541,6 +559,12 @@ class Runtime(Component):
             else:
                 self.add_result(f"Average {val}: " + str((result if "precise" in args else round(result, 2))))
 
+        @Local(print_dataset=False)
+        def localsum(l: Dataset, val: str):
+            res = sum(FullExtractor(l, val, allowed=[int, float]))
+
+            self.add_result(f'Sum {val}: {res}')
+
         @Local()
         def localaverageby(l: Dataset, to_average: str, by: str):
             """
@@ -723,7 +747,7 @@ class Runtime(Component):
             This is also a temporary solution for filter not being powerful enough.
             Later, it will be possible to just do `filter winner(not(desktopfolder))`
             """
-            extractor, t = AutoExtractor(d, attribute)
+            extractor, t = AutoExtractor(d, attribute, no_none=False)
             if t() is None:
                 raise RuntimeError(f'All values for {attribute} are `None` in | drop {attribute} {value}')
             if not any([isinstance(t(), oktype) for oktype in [int, float, str]]):
