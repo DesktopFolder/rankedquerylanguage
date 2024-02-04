@@ -563,7 +563,7 @@ class Runtime(Component):
         def localsum(l: Dataset, val: str):
             res = sum(FullExtractor(l, val, allowed=[int, float]))
 
-            self.add_result(f'Sum {val}: {res}')
+            self.add_result(f'Sum {val} (over {len(l.l)} objects): {res}')
 
         @Local()
         def localaverageby(l: Dataset, to_average: str, by: str):

@@ -332,6 +332,7 @@ def load_defaults(p: str, quiet=False, set_discord=False, no_mq=False):
             "default": Dataset("Default", AsDefaultDatalist(l, l[-1].season)),
             "all": Dataset("All", l),
             "most": Dataset("Most", AsMostDatalist(l)),
+            "matchanalysis": Dataset("Match Analysis", to_idx("ranked.nodecay.noabnormal",l)),
             "__uuids": Dataset("UUIDs", uuids),
             "__users": Dataset("Users", users),
         }
