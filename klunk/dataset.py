@@ -112,6 +112,7 @@ class PikaConnection:
         _datasets_["default"].update(AsDefaultDatalist(res, res[0].season))
         _datasets_["all"].update(res)
         _datasets_["most"].update(AsMostDatalist(res))
+        _datasets_["matchanalysis"].update(to_idx("ranked.nodecay.noabnormal", res))
         uuids, users = GetUserMappings(res)
         _datasets_["__uuids"].update_overwrite_dict(uuids)
         _datasets_["__users"].update_overwrite_dict(users)
