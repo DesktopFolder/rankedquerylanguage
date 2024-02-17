@@ -5,6 +5,15 @@ from .filters import *
 from typing import Any
 from .players import Player
 
+# From Sichi! :) Thanks
+PLAYOFFS_SEASON_1 = [371960, 372000, 372046, 372084, 372180, 372221, 372262, 372339, 372371, 372402, 372462, 372497, 372529, 372595, 372634, 372672, 372737, 372796, 372840, 372912, 372961, 388232, 388265, 388302, 388361, 388401, 388443, 388480, 388513, 388574, 388590, 388616, 388639, 388701, 388725, 388749, 388774, 388801, 390660, 390690, 390710, 390804, 390829, 390863, 390887, 390923, 391015, 391060, 391103, 391138, 391210, 391246, 391274, 391317, 391348, 391376, 391403]
+
+PLAYOFFS_SEASON_2 = [538713, 538738, 538777, 538799, 538832, 538887, 538917, 538969, 538995, 539095, 539132, 539222, 539248, 539332, 539355, 539386, 539440, 539457, 539495, 551034, 551066, 551093, 551132, 551159, 551208, 551234, 551274, 551344, 551375, 551410, 551434, 551451, 551508, 551527, 551553, 551587, 551603, 553157, 553183, 553250, 553374, 553432, 553463, 553516, 553593, 553632, 553669, 553719, 553741, 553849, 553871, 553903, 553924, 553956, 553972, 553997]
+
+PLAYOFFS_SEASON_3 = [709562, 709596, 709684, 709733, 709803, 709865, 709936, 709982, 710021, 710080, 710137, 710177, 710241, 710309, 710343, 710388, 710427, 710478, 710504, 710522, 722052, 722082, 722147, 722212, 722234, 722271, 722291, 722308, 722350, 722381, 722432, 722456, 722488, 722541, 722567, 722610, 724452, 724481, 724520, 724621, 724667, 724721, 724781, 724828, 724896, 724932, 724999, 725045, 725097, 725129, 725167]
+
+PLAYOFFS = PLAYOFFS_SEASON_1 + PLAYOFFS_SEASON_2 + PLAYOFFS_SEASON_3
+
 _datasets_ = None
 __discord = False
 
@@ -182,6 +191,25 @@ def to_idx(s: str, l: list[QueryMatch], cs=None) -> list[QueryMatch]:
     return l
 
 
+def mid_idx(mids: list[int], l: list[QueryMatch]) -> list[QueryMatch]:
+    mids = sorted(mids)
+    
+    def pred(q: QueryMatch):
+        if not mids:
+            return False
+        if q.id == mids[0]:
+            mids.pop(0)
+            return True
+        return False
+    
+    l = [m for m in l if pred(m)]
+
+    if mids:
+        print(f'Warning! Match ids not found while constructing index: {mids}')
+
+    return l
+
+
 def format_str(o: object):
     if o is None:
         return "<None>"
@@ -334,6 +362,10 @@ def load_defaults(p: str, quiet=False, set_discord=False, no_mq=False):
             "all": Dataset("All", l),
             "most": Dataset("Most", AsMostDatalist(l)),
             "matchanalysis": Dataset("Match Analysis", to_idx("ranked.nodecay.noabnormal",l)),
+            "playoffs1": Dataset("Ranked Playoffs 1", mid_idx(PLAYOFFS_SEASON_1, l)),
+            "playoffs2": Dataset("Ranked Playoffs 2", mid_idx(PLAYOFFS_SEASON_2, l)),
+            "playoffs3": Dataset("Ranked Playoffs 3", mid_idx(PLAYOFFS_SEASON_3, l)),
+            "playoffs": Dataset("Ranked Playoffs", mid_idx(PLAYOFFS, l)),
             "__uuids": Dataset("UUIDs", uuids),
             "__users": Dataset("Users", users),
         }
