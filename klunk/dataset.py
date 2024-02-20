@@ -296,6 +296,9 @@ class Dataset:
             return res
         if type(val) == str:
             return cleaned(val)
+        if type(val) in [tuple, MatchMember, QueryMatch]:
+            return format_str(val)
+        raise RuntimeError(f'Could not summarize {type(val)}')
 
     def example(self):
         if type(self.l) in SUPPORTED_ITERABLES:

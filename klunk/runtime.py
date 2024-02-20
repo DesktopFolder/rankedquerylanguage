@@ -93,7 +93,7 @@ def AutoExtractor(d: Dataset, attribute: str, *args, no_none=True, allowed=None)
     return (extractor, type(None))
 
 
-def FullExtractor(d: Dataset, attribute: str, *args, **kwargs):
+def FullExtractor(d: Dataset, attribute: str, *args, drop_none=True, **kwargs):
     """
     A full-featured extractor that also yields over the results.
     You don't have to write logic! That's great.
@@ -101,7 +101,9 @@ def FullExtractor(d: Dataset, attribute: str, *args, **kwargs):
     """
     e, t = AutoExtractor(d, attribute, *args, **kwargs)
     for val in d.l:
-        yield t(e(val))
+        res = e(val)
+        if res is not None:
+            yield t(res)
 
 def FullExtractorWithO(d: Dataset, attribute: str, *args, **kwargs):
     """
@@ -111,7 +113,9 @@ def FullExtractorWithO(d: Dataset, attribute: str, *args, **kwargs):
     """
     e, t = AutoExtractor(d, attribute, *args, **kwargs)
     for val in d.l:
-        yield (t(e(val)), val)
+        res = e(val)
+        if res is not None:
+            yield (t(res), val)
 
 class TypedExtractor:
     def __init__(self, *args, **kwargs) -> None:
@@ -119,6 +123,9 @@ class TypedExtractor:
 
     def get(self, o):
         return self.result_type(self.extractor(o))
+
+    def valid(self, o):
+        return self.extractor(o) is not None
 
 
 def SmartReplacer(ex, a):
@@ -663,14 +670,15 @@ class Runtime(Component):
             if by is None:
                 # THIS IS SO COOL.
                 t = TypedExtractor(d, attribute, allowed=[float, int])
-                return d.clone(f(d.l, key=t.get))
+                result = f([y for y in d.l if t.valid(y)], key=t.get)
+                return d.clone([result])
             res = dict()
             byextractor, t = AutoExtractor(d, by)
             for extracted_value, full_object in FullExtractorWithO(d, attribute, allowed=[float, int]):
                 key = byextractor(full_object)
                 if key not in res or res[key] < extracted_value:
                     res[key] = extracted_value
-            return d.clone(list(res))
+            return d.clone(list(res.items()))
 
         @Local()
         def localmax(d: Dataset, attribute, by=None):
