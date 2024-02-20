@@ -8,3 +8,7 @@ class Seconds(int):
 
 class UUID(str):
     pass
+
+
+def is_numeric(T):
+    return issubclass(T, int) or issubclass(T, float)

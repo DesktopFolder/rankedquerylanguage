@@ -1,5 +1,5 @@
 from collections import defaultdict
-from .extra_types import UUID, Milliseconds, Seconds
+from .extra_types import UUID, Milliseconds, Seconds, is_numeric
 from .match import QueryMatch
 from .parse_utils import partition_list
 from .component import Component
@@ -578,7 +578,7 @@ class Runtime(Component):
                 return self.add_result(f"Dataset was empty; no average calculable.")
             extractor = SmartExtractor(data[0], val)
             example = extractor(data[0])
-            if type(example) not in [int, Milliseconds, Seconds, float]:
+            if not is_numeric(type(example)):
                 return self.add_result(f"Could not average type {type(example)}.")
             result = average([extractor(x) for x in data])
             if "time" in args or type(example) in [Milliseconds, Seconds]:
@@ -669,7 +669,7 @@ class Runtime(Component):
         def localop(d: Dataset, attribute, by=None, f=max):
             if by is None:
                 # THIS IS SO COOL.
-                t = TypedExtractor(d, attribute, allowed=[float, int])
+                t = TypedExtractor(d, attribute, allowed=[Milliseconds, Seconds, float, int])
                 result = f([y for y in d.l if t.valid(y)], key=t.get)
                 return d.clone([result])
             res = dict()
