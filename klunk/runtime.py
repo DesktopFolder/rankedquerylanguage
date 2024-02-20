@@ -69,6 +69,9 @@ def AutoExtractor(d: Dataset, attribute: str, *args, no_none=True, allowed=None)
     """
     Generates a Callable C(o) which returns o->attribute.
     Also simultaneously returns the type that the extractor extracts.
+    Arguments:
+      allowed -> Constrain the type of the extracted value.
+      no_none -> Raise an error if we couldn't find a good value.
     """
     # First, make the extractor.
     example = d.example()
@@ -94,10 +97,28 @@ def FullExtractor(d: Dataset, attribute: str, *args, **kwargs):
     """
     A full-featured extractor that also yields over the results.
     You don't have to write logic! That's great.
+    Not helpful if you want other things than just the extracted value.
     """
     e, t = AutoExtractor(d, attribute, *args, **kwargs)
     for val in d.l:
         yield t(e(val))
+
+def FullExtractorWithO(d: Dataset, attribute: str, *args, **kwargs):
+    """
+    A full-featured extractor that also yields over the results.
+    You don't have to write logic! That's great.
+    Not helpful if you want other things than just the extracted value.
+    """
+    e, t = AutoExtractor(d, attribute, *args, **kwargs)
+    for val in d.l:
+        yield (t(e(val)), val)
+
+class TypedExtractor:
+    def __init__(self, *args, **kwargs) -> None:
+        self.extractor, self.result_type = AutoExtractor(*args, **kwargs) 
+
+    def get(self, o):
+        return self.result_type(self.extractor(o))
 
 
 def SmartReplacer(ex, a):
@@ -637,6 +658,38 @@ class Runtime(Component):
                 for newsublist in newsublists.values():
                     newlist.append(newsublist)
             return l.clone(newlist)
+            
+        def localop(d: Dataset, attribute, by=None, f=max):
+            if by is None:
+                # THIS IS SO COOL.
+                t = TypedExtractor(d, attribute, allowed=[float, int])
+                return d.clone(f(d.l, key=t.get))
+            res = dict()
+            byextractor, t = AutoExtractor(d, by)
+            for extracted_value, full_object in FullExtractorWithO(d, attribute, allowed=[float, int]):
+                key = byextractor(full_object)
+                if key not in res or res[key] < extracted_value:
+                    res[key] = extracted_value
+            return d.clone(list(res))
+
+        @Local()
+        def localmax(d: Dataset, attribute, by=None):
+            """
+            `max(attribute, by=None)` - computes the maximum value of an attribute.
+            If `by` is left default, the result of this operation is the full object
+            that contains the maximum attribute, e.g: `max elo` -> MatchMember(Feinberg, ...)
+            If `by` is set to another value, the result of this operation is a list
+            of tuples (by, maxvalue), e.g.: `max elo uuid` -> [(UUID, theirMax), ...]
+            This might change in the future when typing is normalized for this language.
+            """
+            return localop(d, attribute, by, max)
+
+        @Local()
+        def localmin(d: Dataset, attribute, by=None):
+            """
+            `min(attribute, by=None)` - Like `help max` but minimum values instead.
+            """
+            return localop(d, attribute, by, min)
 
         @Local()
         def localbetween(d: Dataset, attribute, min_val, max_val):
