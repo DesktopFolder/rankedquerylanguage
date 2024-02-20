@@ -292,10 +292,10 @@ class QueryMatch:
         return self.winner == "__draw"
 
     def rql_loser(self):
-        return self.get_other_member(self.winner)
+        return self.get_other_member(self.winner).uuid
 
     def rql_winner(self):
-        return self.get_member(self.winner)
+        return self.get_member(self.winner).uuid
 
     def rql_completed(self):
         # NOTE - Draws are now marked as ff and weren't before.
