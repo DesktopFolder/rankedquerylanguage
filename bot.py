@@ -313,7 +313,7 @@ async def qb_faq(interaction: discord.Interaction, choice: app_commands.Choice[s
     faq = FAQ[q]
     ans = faq["answer"]
     que = faq["question"]
-    return await interaction.response.send_message(f"**FAQ: {que}**:\n{ans}")
+    return await interaction.response.send_message(f"**FAQ: {que}**\n{ans}")
 
 
 @client.tree.command()
