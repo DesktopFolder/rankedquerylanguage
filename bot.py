@@ -3,6 +3,7 @@ from discord import app_commands
 from io import BytesIO
 from klunk import sandbox
 from klunk.language import ParseError
+from klunk.match import NON_ABNORMAL_PLAYERS
 
 ONE_TIME = True
 
@@ -257,6 +258,62 @@ async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.C
         query = f"index s{season} | {query}"
 
     await run_discord_query(interaction, query)
+
+
+FAQ = {
+    "update_rate": {
+        "name": "Auto Updating",
+        "question": "How does the bot's auto-updating work?",
+        "answer": "Matches are automatically pulled by ID from the Ranked API. For rate limit reasons, the match puller sometimes waits up to five minutes to pull new matches. Use `/qb_info` to see the latest match that has been ingested into the bot."
+    },
+    "maintenance": {
+        "name": "Ranked Maintenances",
+        "question": "Do Ranked maintenance outages affect the bot?",
+        "answer": "If the ranked servers are down, the bot will stop loading new matches. However, the query system will still work fine on all matches loaded up until that point. You can see the latest match available in the database with `/qb_info`."
+    },
+    "about": {
+        "name": "About the bot",
+        "question": "Who made this bot / how does it work?",
+        "answer": "This bot was written by DesktopFolder. It is composed of a Discord bot front-end, which you interact with, and a (bad) database and query system in the backend, which executes your queries. The query language (RQL) and its compiler/runtime are designed from scratch, but based off of APLs (array programming languages) and query languages like Splunk or SQL."
+    },
+    "averages": {
+        "name": "/average_completion",
+        "question": "How does `/average_completion` work?",
+        "answer": "This command uses a query that finds a player’s average completion time for the current season (ranked matches only!). If you want to get average completion time for another season or a specific set of matches, you will need a to make a custom query with `/query`."
+    },
+    "learn": {
+        "name": "Learning the Language",
+        "question": "How do I learn how to use the query language?",
+        "answer": "That's the fun part - you don't! More seriously, the language is not particularly well documented. Your best bet is a mix of the following:\n- Reading the results of `/query help` and `/query help FN` for a variety of common functions;\n- Making sure you use `| attrs` to see what attributes are available on the type you're operating over;\n- Watching Sichi's tutorial video: <https://www.youtube.com/watch?v=jhZ8T2ZpOaI>\n- Trying out the prewritten queries, like `/average_completion` and `/qb_leaderboard`, and looking at the queries they use;\n- If you're having difficulties, feel free to ping me, I don't mind :)\n- (Best option if you know Python) Reading the runtime code at <https://github.com/DesktopFolder/rankedquerylanguage/blob/main/klunk/runtime.py> - search for `@Local` to find the source code of the majority of the runtime functions;"
+    },
+    "correctness": {
+        "name": "Dataset Correctness",
+        "question": "How correct is the dataset?",
+        "answer": "I take data consistency and accuracy very seriously! However, there is a limit to what is possible considering matches are sometimes corrupted, cheated, or not available. Generally speaking, though, data should be completely correct, especially when operating on later seasons. Seasons 0 and 1 had more corrupted/cheated matches (note that both have been removed from the dataset).\nIf you notice a data inconsistency, please let me know :)"
+    },
+    "cheat": {
+        "name": "Cheated Match Filter",
+        "question": "How does the 'cheated match filter' work?",
+        "answer": f"The dataset includes some cheated (or corrupted?) matches. In all default indices ***except `index all`***, those matches are removed with the `noabnormal` filter. You can apply this filter to your `index all` searches with `| filter noabnormal`. These matches **are autodetected** by the `is_abnormal` function in `match.py`. Matches are considered abnormal in the following situation: They are completed, and their duration is less than 7 minutes, and the winner is not in {NON_ABNORMAL_PLAYERS}."
+    },
+}
+
+FAQ_CHOICES = [app_commands.Choice(name=v["name"], value=k) for k, v in FAQ.items()]
+
+
+@client.tree.command()
+@app_commands.choices(choice=FAQ_CHOICES)
+@app_commands.describe(
+    choice="The FAQ you want to access.",
+)
+async def qb_faq(interaction: discord.Interaction, choice: app_commands.Choice[str]):
+    q = choice.value
+    if q not in FAQ:
+        return await interaction.response.send_message(f"Your choice of {q} is not in the FAQ. Likely a bug?")
+    faq = FAQ[q]
+    ans = faq["answer"]
+    que = faq["question"]
+    return await interaction.response.send_message(f"**FAQ: {que}**:\n{ans}")
 
 
 @client.tree.command()
