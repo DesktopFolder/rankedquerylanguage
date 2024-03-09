@@ -304,6 +304,9 @@ class QueryMatch:
     def rql_is_completed(self):
         return not self.rql_is_draw() and not self.is_ff
 
+    def rql_uuids(self) -> list[UUID]:
+        return [m.uuid for m in self.members]
+
     def rql_dynamic(self, key="default"):
         if self.dynamic is None:
             raise RuntimeError(f'Cannot extract dynamic data... it has not been set.')

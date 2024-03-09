@@ -353,7 +353,7 @@ class Runtime(Component):
             example = e(d.example())
             if isinstance(example, list):
                 # Quick fix for now.
-                return [x for x in d.l if any([inner in s for inner in e(x)])]
+                return [o for o in d.l if any([inner in s for inner in e(o)])]
 
             return [x for x in d.l if e(x) in s]
 
