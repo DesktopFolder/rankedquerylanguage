@@ -14,10 +14,10 @@ class H2H:
             self.w1 += 1
         elif k == self.m2:
             self.w2 += 1
-        elif k is None:
+        elif k is None or k == '__draw':
             self.draw += 1
         else:
-            raise KeyError(f'{self.m1}, {self.m2}, {k}')
+            raise KeyError(f'H2H could not increment: {self.m1}, {self.m2}, {k}')
 
     def get(self, k: str):
         if k == self.m1:
@@ -25,7 +25,7 @@ class H2H:
         elif k == self.m2:
             return self.w2
         else:
-            raise KeyError(f'{self.m1}, {self.m2}, {k}')
+            raise KeyError(f'H2H could not get: {self.m1}, {self.m2}, {k}')
 
 def generate(d: Dataset, pl: list[str], nickmap: dict[str, str]):
     uuids = set(pl)
