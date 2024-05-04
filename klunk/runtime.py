@@ -1,7 +1,7 @@
 from collections import defaultdict
 from .extra_types import UUID, Milliseconds, Seconds, is_numeric
 from .match import QueryMatch
-from .parse_utils import partition_list
+from.parse_utils import partition_list
 from .component import Component
 from .expression import Expression
 from .dataset import SUPPORTED_ITERABLES, Dataset, UUIDDataset
@@ -799,6 +799,22 @@ class Runtime(Component):
             if value == "empty":
                 return d.clone([x for x in d.l if len(x) != 0])
             raise RuntimeError(f"Could not find drop parameter {value}")
+
+        @Local()
+        def localh2h(d: Dataset, varname: str):
+            """
+            `h2h(varname)` - `varname` must point to a list of UUIDs. Generates a list of h2h matches.
+            Must be used with +asfile. List of UUIDs must be <=32 long.
+            """
+            if varname not in varlist:
+                raise RuntimeError(f'{varname} is not an existing variable. See `makelist`, `assign`')
+            l = varlist[varname]
+            if len(l) > 32:
+                raise RuntimeError(f'{varname} is a list that is {len(l)} long. Must be <= 32 long.' +
+                                     ' Contact DesktopFolder if you have a special use case.')
+            from .h2h import generate
+            return generate(d, l, nickmap=self.user_dataset.uuids_to_users)
+
 
         @Local()
         def localdrop(d: Dataset, attribute, value):

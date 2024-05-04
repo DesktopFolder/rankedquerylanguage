@@ -137,11 +137,13 @@ class Player:
         )
 
     def tournament_summary_classic(self):
-        print(
-            f"{self.nick} ({self.elo} final elo):",
-            f"{time_fmt(self.avg_completion())} average completion. (PB: {time_fmt(self.pb or 0)})",
-            f"Winrate: {percentage_str(self.wins[2], self.played_per[2])}",
-        )
+        print(self.rql_tournament_fmt())
+
+    def rql_tournament_fmt(self) -> str:
+        s = (f"{self.nick} ({self.elo} final elo):" +
+            f" {time_fmt(self.avg_completion())} average completion. (PB: {time_fmt(self.pb or 0)})" +
+            f" Winrate: {percentage_str(self.wins[2], self.played_per[2])}")
+        return s
 
 
 class PlayerManager:
