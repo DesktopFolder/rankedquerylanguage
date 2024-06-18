@@ -110,6 +110,10 @@ class Timeline:
     def from_items(time, id, uuid):
         return Timeline({"time": time, "timeline": id, "uuid": uuid})
 
+    @staticmethod
+    def custom(uuid, name, time):
+        return Timeline.from_items(uuid=uuid, id=f'rql.{name}', time=time)
+
     def __repr__(self):
         return f"Timeline({self.time}, {self.id}, {self.uuid})"
 
@@ -263,6 +267,10 @@ class QueryMatch:
             if s > self.duration:
                 self.was_fixed = True
                 self.duration = s
+            if self.rql_completed():
+                self.timelines.append(Timeline.custom(uuid=self.winner, name='completed', time=self.duration))
+                for m in self.get_other_members(self.winner):
+                    self.timelines.append(Timeline.custom(uuid=self.winner, name='lost', time=self.duration))
 
         self.is_abnormal = False
         # Checking for abnormal matches.
@@ -332,6 +340,9 @@ class QueryMatch:
             if m.uuid != uuid:
                 return m
         raise ValueError(f"Could not find other uuid for {uuid} in match ID {self.id}")
+
+    def get_other_members(self, uuid):
+        return [m for m in self.members if m.uuid != uuid]
 
     def valid_elos(self):
         return [

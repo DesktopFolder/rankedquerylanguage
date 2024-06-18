@@ -7,6 +7,8 @@ from klunk.match import NON_ABNORMAL_PLAYERS
 
 ONE_TIME = True
 
+WARNS_ETC = set()
+
 
 class QueryEngine:
     def __init__(self) -> None:
@@ -151,12 +153,21 @@ async def on_ready():
         print(f"Logged in as {client.user} (ID: {client.user.id})")
 
 
+def get_warns(uid: int):
+    global WARNS_ETC
+    if uid not in WARNS_ETC:
+        WARNS_ETC.add(uid)
+        return '\nWarning: Due to RAM limitations (this bot currently consumes ~15gb), I will soon be only loading the 2 latest seasons. If this is a problem for your workflow, please let me know.\n'
+    return ''
+
+
 async def run_discord_query(interaction: discord.Interaction, query: str, notes=None):
     print("Running Discord query:", query)
     await interaction.response.defer(ephemeral=False, thinking=True)
     resp = ENGINE.run(query, False, False, True)
     print("Bot finished running query:", query)
-    notes = "" if notes is None else "\n" + "\nNote: ".join(notes)
+    warns = get_warns(interaction.user.id)
+    notes = f"{warns}" if notes is None else "{warns}\nNote: ".join(notes)
     literal = "" if "literal" not in resp else f"\n{resp['literal']}"
     try:
         if "file" in resp:
@@ -182,6 +193,7 @@ async def run_discord_query(interaction: discord.Interaction, query: str, notes=
                 await interaction.followup.send(f"From query: `{query}`:{notes}{literal}")
     except Exception as e:
         print(f"Failed to send response to /query - likely it took too long: {e}.")
+        await interaction.followup.send(f"Your query failed. This is usually because you generated something that Discord's API rejected. Try generating a smaller result set.")
 
 
 @client.tree.command()
