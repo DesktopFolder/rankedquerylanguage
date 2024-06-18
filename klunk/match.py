@@ -269,8 +269,8 @@ class QueryMatch:
                 self.duration = s
             if self.rql_completed():
                 self.timelines.append(Timeline.custom(uuid=self.winner, name='completed', time=self.duration))
-                for m in self.get_other_members(self.winner):
-                    self.timelines.append(Timeline.custom(uuid=self.winner, name='lost', time=self.duration))
+                for member in self.get_other_members(self.winner):
+                    self.timelines.append(Timeline.custom(uuid=member.uuid, name='lost', time=self.duration))
 
         self.is_abnormal = False
         # Checking for abnormal matches.
@@ -341,7 +341,7 @@ class QueryMatch:
                 return m
         raise ValueError(f"Could not find other uuid for {uuid} in match ID {self.id}")
 
-    def get_other_members(self, uuid):
+    def get_other_members(self, uuid) -> list[MatchMember]:
         return [m for m in self.members if m.uuid != uuid]
 
     def valid_elos(self):
