@@ -139,6 +139,12 @@ def default_groups(dirname):
 
 
 def load_raw_matches(dirname, quiet=False) -> list[QueryMatch]:
+    """
+    This function does all of the match loading for the bot. Loads from
+    our kind-of-cursed database system/datastore.
+    Now only loads [s4, s5...]
+    i.e. we are now ignoring s3 or previous matches, EXCEPT playoffs games.
+    """
     assert not dirname or dirname.endswith("/")
 
     # [100000-120000.txt, ...]
@@ -157,7 +163,16 @@ def load_raw_matches(dirname, quiet=False) -> list[QueryMatch]:
                 stripped = l.strip()
                 if stripped != "{}":
                     try:
-                        res.append(from_json_string(stripped))
+                        data = from_json_string(stripped)
+                        if data.season == 0:
+                            continue
+                        if data.season == 1 and data.id not in PLAYOFFS_SEASON_1:
+                            continue
+                        if data.season == 2 and data.id not in PLAYOFFS_SEASON_2:
+                            continue
+                        if data.season == 3 and data.id not in PLAYOFFS_SEASON_3:
+                            continue
+                        res.append(data)
                     except Exception as e:
                         print(f"Char 0: {stripped[0]}")
                         raise RuntimeError(f'Bad JSON document: "{stripped}"') from e

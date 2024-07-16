@@ -203,7 +203,7 @@ class QueryMatch:
         # 'score_changes', # dict
         "is_ff",  # forfeit: bool
         "season",  # match_season: int ([0, ..))
-        # 'category', # category: str (Always 'ANY'?)
+        "category", # category: str (Always 'ANY'?)
         "date",  # match_date: Seconds
         "is_decay",  # is_decay: bool
         # 'completes', # list[dict[UUID, Milliseconds]]
@@ -255,6 +255,7 @@ class QueryMatch:
         self.season = m["match_season"]
         self.date: Seconds = Seconds(m["match_date"])
         self.is_decay = m["is_decay"]
+        self.category: str = m.get("category", "UNKNOWN")
         assert self.is_decay is not None
         # TIMELINE LIST IS SORTED BY DEFAULT. THIS IS A GOOD THING.
         self.timelines = TimelineList(sorted([Timeline(tl) for tl in (m["timelines"] or list())], key=lambda tl: tl.time))
