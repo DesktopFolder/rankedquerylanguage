@@ -2,6 +2,11 @@
 
 - `filter decay | extract winner` -> drawn matches?
 
+### Performance / References
+
+- https://stackoverflow.com/questions/42364044/python-interpreter-string-pooling-optimization
+- https://stackoverflow.com/questions/67650841/how-to-find-memory-usage-with-memory-profiler-python
+
 ---
 
 - randomselect
