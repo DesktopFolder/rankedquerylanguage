@@ -223,6 +223,12 @@ async def qb_info(interaction: discord.Interaction):
     await interaction.followup.send(s)
 
 
+def apply_season(season: int | None, query_str: str):
+    if season is not None:
+        return f"index s{season} | {query_str}"
+    return query_str
+
+
 @client.tree.command()
 @app_commands.choices(
     value=[
@@ -265,11 +271,20 @@ async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.C
     if player is not None:
         v = v + '@player'
 
-    query = leaderboard_queries[v]
-    if season is not None:
-        query = f"index s{season} | {query}"
+    query = apply_season(season, leaderboard_queries[v])
 
     await run_discord_query(interaction, query)
+
+
+@client.tree.command()
+@app_commands.describe(
+    player1="The player you want to get the winrate / stats for.",
+    player2="The player you want to get stats against.",
+    season="Optional. Default to latest season.",
+    to_extract="Optional. Default to | extract winrate.",
+)
+async def qb_matchup(interaction: discord.Interaction, player1: str, player2: str, season: int | None = None, to_extract: str = "| extract winrate"):
+    await run_discord_query(interaction, apply_season(season, f"filter uuid({player1}) uuid({player2}) | players | filter nick({player1}) {to_extract}"))
 
 
 FAQ = {
