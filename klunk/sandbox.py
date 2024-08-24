@@ -25,8 +25,8 @@ class Query(Component):
         from os.path import isfile
 
         if isfile("location.txt"):
-            self.log("Using location.txt to load matches.")
             loc = open("location.txt").read().strip()
+            self.log(f"Using location.txt to load matches from {loc}")
         else:
             self.log("Loading sample matches.")
             loc = "klunk/samples/"

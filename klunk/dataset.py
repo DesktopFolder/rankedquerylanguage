@@ -138,6 +138,20 @@ def default_groups(dirname):
     ]
 
 
+def get_skip_rule(groups):
+    if len(groups) < 20:
+        return lambda _: False
+    def skip_rule(data):
+        ignore_seasons = [(0, []), (1, PLAYOFFS_SEASON_1), (2, PLAYOFFS_SEASON_2), (3, PLAYOFFS_SEASON_3)]
+        for s, passthrough in ignore_seasons:
+            if data.season == s:
+                if data.id in passthrough:
+                    return False
+                return True
+        return False
+    return skip_rule
+
+
 def load_raw_matches(dirname, quiet=False) -> list[QueryMatch]:
     """
     This function does all of the match loading for the bot. Loads from
@@ -149,6 +163,7 @@ def load_raw_matches(dirname, quiet=False) -> list[QueryMatch]:
 
     # [100000-120000.txt, ...]
     groups = default_groups(dirname)
+    skip_rule = get_skip_rule(groups)
 
     # list[QueryMatch]
     res: list[QueryMatch] = list()
@@ -164,13 +179,7 @@ def load_raw_matches(dirname, quiet=False) -> list[QueryMatch]:
                 if stripped != "{}":
                     try:
                         data = from_json_string(stripped)
-                        if data.season == 0:
-                            continue
-                        if data.season == 1 and data.id not in PLAYOFFS_SEASON_1:
-                            continue
-                        if data.season == 2 and data.id not in PLAYOFFS_SEASON_2:
-                            continue
-                        if data.season == 3 and data.id not in PLAYOFFS_SEASON_3:
+                        if skip_rule(data):
                             continue
                         res.append(data)
                     except Exception as e:
