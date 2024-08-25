@@ -284,7 +284,7 @@ async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.C
     to_extract="Optional. Default to | extract winrate.",
 )
 async def qb_matchup(interaction: discord.Interaction, player1: str, player2: str, season: int | None = None, to_extract: str = "| extract winrate"):
-    await run_discord_query(interaction, apply_season(season, f"filter uuid({player1}) uuid({player2}) | players | filter nick({player1}) {to_extract}"))
+    await run_discord_query(interaction, apply_season(season, f"filter uuid({player1}) uuid({player2}) | players | filter uuid({player1}) {to_extract}"))
 
 
 FAQ = {
