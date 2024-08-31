@@ -214,6 +214,7 @@ class QueryMatch:
         "was_fixed",  # debug; timelines used to fix duration
         "is_abnormal",
         "dynamic", # meta - store arbitrary data.
+        "tag",
     )
 
     @staticmethod
@@ -260,6 +261,7 @@ class QueryMatch:
         # TIMELINE LIST IS SORTED BY DEFAULT. THIS IS A GOOD THING.
         self.timelines = TimelineList(sorted([Timeline(tl) for tl in (m["timelines"] or list())], key=lambda tl: tl.time))
         self.dynamic: None | dict = None
+        self.tag: str | None = m.get("tag")
 
         self.scored = m["score_changes"] is not None and len(m["score_changes"]) > 0
         self.was_fixed = False
@@ -315,6 +317,9 @@ class QueryMatch:
 
     def rql_uuids(self) -> list[UUID]:
         return [m.uuid for m in self.members]
+
+    def rql_is_playoffs(self):
+        return self.tag is not None and 'playoff' in self.tag
 
     def rql_dynamic(self, key="default"):
         if self.dynamic is None:
