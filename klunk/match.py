@@ -215,6 +215,7 @@ class QueryMatch:
         "is_abnormal",
         "dynamic", # meta - store arbitrary data.
         "tag",
+        "spectated",
     )
 
     @staticmethod
@@ -262,6 +263,8 @@ class QueryMatch:
         self.timelines = TimelineList(sorted([Timeline(tl) for tl in (m["timelines"] or list())], key=lambda tl: tl.time))
         self.dynamic: None | dict = None
         self.tag: str | None = m.get("tag")
+        
+        self.spectated: bool = len(m.get("spectators", [])) > 0
 
         self.scored = m["score_changes"] is not None and len(m["score_changes"]) > 0
         self.was_fixed = False

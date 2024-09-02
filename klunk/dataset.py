@@ -372,6 +372,40 @@ def GetUserMappings(l: list[QueryMatch]):
     return uuids, users
 
 
+def cleanup_matches(l: list[QueryMatch]):
+    for i, m in enumerate(l):
+        # Fix tagged playoffs matches
+        if m.type == 3 and m.spectated and m.tag is not None:
+            # Private match. Maybe tag propagation required.
+            # Grab last hour / next hour and check.
+            ONE_HOUR = 60 * 60
+
+            # Back scan.
+            loc = i
+            while loc > 0:
+                loc -= 1
+                pm = l[loc]
+                if (m.date - pm.date) > ONE_HOUR:
+                    break
+                if pm.type != 3 or not pm.spectated or pm.tag is not None:
+                    continue
+                if pm.members == m.members:
+                    pm.tag = m.tag
+
+            # Forward scan.
+            loc = i
+            while loc < len(l) - 1:
+                loc += 1
+                pm = l[loc]
+                if (pm.date - m.date) > ONE_HOUR:
+                    break
+                if pm.type != 3 or not pm.spectated or pm.tag is not None:
+                    continue
+                if pm.members == m.members:
+                    pm.tag = m.tag
+    return l
+
+
 def load_defaults(p: str, quiet=False, set_discord=False, no_mq=False):
     global __discord
     if set_discord:
@@ -382,7 +416,7 @@ def load_defaults(p: str, quiet=False, set_discord=False, no_mq=False):
             print("Starting RabbitMQ consumer.")
             _mq_.start_consuming()
             print("Finished loading RabbitMQ consumer.")
-        l = load_raw_matches(p, quiet)
+        l = cleanup_matches(load_raw_matches(p, quiet))
         uuids, users = GetUserMappings(l)
         _datasets_ = {
             "default": Dataset("Default", AsDefaultDatalist(l, l[-1].season)),
