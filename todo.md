@@ -1,6 +1,7 @@
 ### BUG FIXES!
 
 - `filter decay | extract winner` -> drawn matches?
+- `index all | filter season(1) | count` -> gets us nothing, which is wrong, we should have playoffs matches
 
 ### Performance / References
 

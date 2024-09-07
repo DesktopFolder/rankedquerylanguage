@@ -85,8 +85,8 @@ class Player:
     def rql_winrate(self, mode=2):
         w = self.wins[mode]
         l = self.losses[mode]
-        if w + l == 0:
-            return "<No Data>"
+        #if w + l == 0:
+        #    return "<No Data>"
         return percentage_str(w, w + l)
 
     def rql_completions(self, mode=2):

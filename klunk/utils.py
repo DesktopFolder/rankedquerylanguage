@@ -1,3 +1,5 @@
+from functools import total_ordering
+
 def noop(*args, **kwargs):
     return None
 
@@ -43,9 +45,59 @@ def time_fmt(x: int | float, is_s=False):
     return f"{h}:{m:02}:{s:02}"
 
 
-def percentage_str(small, large):
-    pctg = round(100 * small / large, 2)
-    return f"{pctg}% ({small} / {large})"
+@total_ordering
+class Percentage:
+    def __init__(self, small: float|int|str = 0, large: float|int = 0):
+        """
+        Accept Percentage() so that type-testing works.
+        Should never actually be used this way. I hope.
+
+        Accept Percentage('n') so that comparison works. Kind of.
+        """
+
+        if isinstance(small, str):
+            # This kind of works...
+            self.pctg = float(small)
+            self.num = self.pctg
+            self.denom = 100.0
+            return
+
+        self.num = small
+        self.denom = large
+        if large != 0:
+            self.pctg = round(100 * small / large, 2)
+        else:
+            self.pctg = None
+
+    def __eq__(self, o) -> bool:
+        if o is None:
+            return self.pctg is None
+        if not isinstance(o, Percentage):
+            raise RuntimeError(f'Compared Percentage to {type(o)}?')
+        return self.num == o.num and self.denom == o.denom
+
+    def __lt__(self, o) -> bool:
+        if self.pctg is None:
+            if o.pctg is None:
+                return False # Equal
+            return True # Less than
+        if o.pctg is None:
+            return False # Greater than
+        return self.pctg < o.pctg
+
+    def __str__(self):
+        if self.pctg is None:
+            return "<No Data>"
+        return f"{self.pctg}% ({self.num} / {self.denom})"
+
+    def __repr__(self):
+        return self.__str__()
+
+
+def percentage_str(small, large) -> Percentage:
+    #pctg = round(100 * small / large, 2)
+    #return f"{pctg}% ({small} / {large})"
+    return Percentage(small, large)
 
 
 def test_guild():

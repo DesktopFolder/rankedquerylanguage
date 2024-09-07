@@ -9,7 +9,7 @@ from typing import Callable, Any
 from . import commands, jobs, splits
 from .players import MatchPlayer, PlayerManager
 from .parse import parse_boolean
-from .utils import average, time_fmt
+from .utils import average, time_fmt, Percentage
 from .strings import HELP, CHANGELOG, EXAMPLES
 
 # Later - this would be nice :)
@@ -827,7 +827,7 @@ class Runtime(Component):
             extractor, t = AutoExtractor(d, attribute, no_none=False)
             if t() is None:
                 raise RuntimeError(f'All values for {attribute} are `None` in | drop {attribute} {value}')
-            if not any([isinstance(t(), oktype) for oktype in [int, float, str]]):
+            if not any([isinstance(t(), oktype) for oktype in [int, float, str, Percentage]]):
                 raise RuntimeError(f'Comparisons to {t} in drop {attribute} are not supported yet.')
             if isinstance(value, tuple):
                 if value[1] != '':
