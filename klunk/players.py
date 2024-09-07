@@ -67,6 +67,17 @@ class Player:
 
         self.dynamic = dict()
 
+        self.ranked_mode = False
+
+    def commit_ranked(self):
+        assert not self.ranked_mode
+        self.ranked_mode = True
+        self.wins = self.indexed(self.wins, 2)
+        self.losses = self.indexed(self.losses, 2)
+        self.ff_wins = self.indexed(self.ff_wins, 2)
+        self.ff_losses = self.indexed(self.ff_losses, 2)
+        self.played_per = self.indexed(self.played_per, 2)
+
     def __str__(self):
         return f"{self.nick} ({self.elo} elo)"
 
@@ -76,34 +87,39 @@ class Player:
     def rql_dynamic(self, key="default"):
         return self.dynamic[key]
 
+    def indexed(self, d: dict[int, int]|int, idx: int):
+        if isinstance(d, dict):
+            return d[idx]
+        return d
+
     def extract(self, k):
         return _extract(self, k)
 
     def completions(self, mode=2):
-        return self.wins[mode] - self.ff_wins[mode]
+        return self.indexed(self.wins,mode) - self.indexed(self.ff_wins,mode)
 
     def rql_winrate(self, mode=2):
-        w = self.wins[mode]
-        l = self.losses[mode]
+        w = self.indexed(self.wins,mode)
+        l = self.indexed(self.losses, mode)
         #if w + l == 0:
         #    return "<No Data>"
         return percentage_str(w, w + l)
 
     def rql_completions(self, mode=2):
-        return self.wins[mode] - self.ff_wins[mode]
+        return self.indexed(self.wins,mode) - self.indexed(self.ff_wins,mode)
 
     def rql_completion_winpct(self, mode=2):
-        return 1 - (self.ff_wins[mode] / self.wins[mode])
+        return 1 - (self.indexed(self.ff_wins,mode) / self.indexed(self.wins,mode))
 
     def rql_completion_allpct(self, mode=2):
         # total wins - ff_wins = completion #
-        return (self.wins[mode] - self.ff_wins[mode]) / self.played_per[mode]
+        return (self.indexed(self.wins,mode) - self.indexed(self.ff_wins,mode)) / self.indexed(self.played_per,mode)
 
     def n_completion_winpct(self, mode=2):
-        return percentage_str(self.completions(mode), self.wins[mode])
+        return percentage_str(self.completions(mode), self.indexed(self.wins,mode))
 
     def n_completion_allpct(self, mode=2):
-        return percentage_str(self.completions(mode), self.played_per[2])
+        return percentage_str(self.completions(mode), self.indexed(self.played_per,2))
 
     def total_time(self):
         return sum(self.time_per.values())
@@ -112,10 +128,14 @@ class Player:
         return Milliseconds(sum(self.time_per.values()))
 
     def rql_total_games(self):
+        if isinstance(self.played_per, int):
+            return self.played_per
         return sum(self.played_per.values())
 
     def avg_completion(self, mode=2):
         assert mode == 2
+        if self.match_completions == 0:
+            return -1
         return self.time_completions / self.match_completions
 
     def rql_average_completion(self):
@@ -125,14 +145,14 @@ class Player:
 
     def display(self):
         print(
-            f"{self.nick}: {self.played_per[2]} ranked games, {self.ff_losses[2]} ranked forfeits, {self.wins} wins ({self.ff_wins[2]} due to forfeits), {self.losses[2]} total losses."
+            f"{self.nick}: {self.indexed(self.played_per,2)} ranked games, {self.indexed(self.ff_losses,2)} ranked forfeits, {self.wins} wins ({self.indexed(self.ff_wins,2)} due to forfeits), {self.indexed(self.losses, 2)} total losses."
         )
 
     def tournament_summary(self):
         # really nice formatting
         print(
             f"{self.nick}:\n"
-            f"{self.elo} ({int(round(100*self.wins[2] / self.played_per[2], 0))}%)\n"
+            f"{self.elo} ({int(round(100*self.indexed(self.wins,2) / self.indexed(self.played_per,2), 0))}%)\n"
             f"{stime_fmt(self.avg_completion())} / {stime_fmt(self.pb or 0)}"
         )
 
@@ -142,12 +162,12 @@ class Player:
     def rql_tournament_fmt(self) -> str:
         s = (f"{self.nick} ({self.elo} final elo):" +
             f" {time_fmt(self.avg_completion())} average completion. (PB: {time_fmt(self.pb or 0)})" +
-            f" Winrate: {percentage_str(self.wins[2], self.played_per[2])}")
+            f" Winrate: {percentage_str(self.indexed(self.wins,2), self.indexed(self.played_per,2))}")
         return s
 
 
 class PlayerManager:
-    def __init__(self, l: list[match.QueryMatch], inject=set()):
+    def __init__(self, l: list[match.QueryMatch], inject=set(), no_unranked=False):
         self.players: dict[str, Player] = {}
         self.games_added = 0
         self.ranked_added = 0
@@ -207,6 +227,10 @@ class PlayerManager:
                 if m.type == 2:
                     assert len(m.members) == 2
                     self.ranked_added += 1
+
+        if no_unranked:
+            for p in self.players.values():
+                p.commit_ranked()
 
     def filtered(self, min_games=match_int_dict(), win_games=match_int_dict(), f: Callable = lambda _: True):
         def mg(p, md):

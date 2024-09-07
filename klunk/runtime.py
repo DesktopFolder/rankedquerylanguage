@@ -385,7 +385,7 @@ class Runtime(Component):
                 return localfilter(localindex(None, "most"), ("season", name.lstrip("s")))
             if name == "all":
                 self.add_result(
-                    f"*Warning: Dataset `all` contains* ***all*** *matches, including decay matches, unranked matches, and cheated matches. `index most` only contains legitimate, ranked, non-decay matches.*"
+                    f"*Warning: Dataset `all` contains* ***all*** *matches, including decay matches, unranked matches, and cheated matches. `index most` only contains legitimate, ranked, non-decay matches.* **No datasets contain very old matches due to RAM limitations. See `index all | extract season | count_uniques`.**"
                 )
             if not name in self.datasets:
                 raise RuntimeError(f"{name} is not a valid dataset name.")
@@ -445,7 +445,7 @@ class Runtime(Component):
             `players` - Converts the dataset from a match dataset to a player dataset.
             This changes the datatype that commands operate over.
             """
-            return l.clone(list(PlayerManager(l.l).players.values()))
+            return l.clone(list(PlayerManager(l.l, no_unranked=not l.has_unranked).players.values()))
 
         @Local(print_dataset=False)
         def localexamples(_):

@@ -28,6 +28,9 @@ EXAMPLES = """Examples:
 """
 
 CHANGELOG = """Changelog:
+*September 7, 2024*:
+- Fixed `winrate` object on Player types. Now compares mostly properly to itself and still extracts properly.
+- You can now extract 'wins' or 'losses' on ranked-only datasets to get the actual numbers
 *December 24, 2023*:
 - Added player extraction to /qb_leaderboard. The first number in outputs, if a player is set in the command, is that player's position on the leaderboard. For /qb_leaderboard pb, this does not really make as much sense, it's mostly useful for the other options currently.
 - Added help information to all commands. Access with `/query help command` as always.

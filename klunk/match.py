@@ -418,6 +418,9 @@ class QueryMatch:
     def is_realranked(self):
         return not self.is_decay and self.type == 2
 
+    def is_ranked(self):
+        return self.type == 2
+
     def valid_timelines(self) -> bool:
         return self.timelines is not None and len(self.timelines) > 0
 

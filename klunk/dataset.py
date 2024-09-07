@@ -262,9 +262,15 @@ def format_str(o: object):
 
 
 class Dataset:
-    def __init__(self, name: str, l):
+    def __init__(self, name: str, l, root=False):
         self.l = l
         self.name = name
+        self.has_unranked: bool = True
+        if root and isinstance(self.l, list):
+            if self.l and isinstance(self.l[0], QueryMatch):
+                # if all matches are ranked
+                if all([m.is_ranked() for m in l]):
+                    self.has_unranked = False
 
     def __len__(self):
         if type(self.l) in SUPPORTED_ITERABLES:
@@ -280,7 +286,9 @@ class Dataset:
         return [self.l]
 
     def clone(self, l):
-        return Dataset(self.name, l)
+        d = Dataset(self.name, l)
+        d.has_unranked = self.has_unranked
+        return d
 
     def update(self, other: list[QueryMatch]):
         last_mid = self.l[-1].id
@@ -419,16 +427,16 @@ def load_defaults(p: str, quiet=False, set_discord=False, no_mq=False):
         l = cleanup_matches(load_raw_matches(p, quiet))
         uuids, users = GetUserMappings(l)
         _datasets_ = {
-            "default": Dataset("Default", AsDefaultDatalist(l, l[-1].season)),
-            "all": Dataset("All", l),
-            "most": Dataset("Most", AsMostDatalist(l)),
-            "matchanalysis": Dataset("Match Analysis", to_idx("ranked.nodecay.noabnormal",l)),
-            "playoffs1": Dataset("Ranked Playoffs 1", mid_idx(PLAYOFFS_SEASON_1, l)),
-            "playoffs2": Dataset("Ranked Playoffs 2", mid_idx(PLAYOFFS_SEASON_2, l)),
-            "playoffs3": Dataset("Ranked Playoffs 3", mid_idx(PLAYOFFS_SEASON_3, l)),
-            "playoffs": Dataset("Ranked Playoffs", mid_idx(PLAYOFFS, l)),
-            "__uuids": Dataset("UUIDs", uuids),
-            "__users": Dataset("Users", users),
+            "default": Dataset("Default", AsDefaultDatalist(l, l[-1].season), root=True),
+            "all": Dataset("All", l, root=True),
+            "most": Dataset("Most", AsMostDatalist(l), root=True),
+            "matchanalysis": Dataset("Match Analysis", to_idx("ranked.nodecay.noabnormal",l), root=True),
+            "playoffs1": Dataset("Ranked Playoffs 1", mid_idx(PLAYOFFS_SEASON_1, l), root=True),
+            "playoffs2": Dataset("Ranked Playoffs 2", mid_idx(PLAYOFFS_SEASON_2, l), root=True),
+            "playoffs3": Dataset("Ranked Playoffs 3", mid_idx(PLAYOFFS_SEASON_3, l), root=True),
+            "playoffs": Dataset("Ranked Playoffs", mid_idx(PLAYOFFS, l), root=True),
+            "__uuids": Dataset("UUIDs", uuids, root=True),
+            "__users": Dataset("Users", users, root=True),
         }
 
     if not no_mq:

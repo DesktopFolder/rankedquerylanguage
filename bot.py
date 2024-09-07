@@ -157,7 +157,7 @@ def get_warns(uid: int):
     global WARNS_ETC
     if uid not in WARNS_ETC:
         WARNS_ETC.add(uid)
-        return '\n**Important note:** Ranked matches from seasons 0, 1, 2, and 3 are NO LONGER available in the discord bot dataset. (Excepting playoff matches, which are still loaded.) I still have this data and will start loading it again if/when I rewrite the bot to not consume 15gb of data...\n**Other updates:** The "category" key/value pair is now available in match data.\n'
+        # return '\n**Important note:** Ranked matches from seasons 0, 1, 2, and 3 are NO LONGER available in the discord bot dataset. (Excepting playoff matches, which are still loaded.) I still have this data and will start loading it again if/when I rewrite the bot to not consume 15gb of data...\n**Other updates:** The "category" key/value pair is now available in match data.\n'
     return ''
 
 
