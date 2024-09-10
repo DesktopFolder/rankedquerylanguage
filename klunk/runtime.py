@@ -19,15 +19,26 @@ from .strings import HELP, CHANGELOG, EXAMPLES
 def BasicExtractor(ex, v):
     # Creates and returns a smart extractor for ex
 
+    # v can be a list of arguments to a function.
+    # in that case it will be a tuple.
+    if isinstance(v, tuple):
+        if len(v) != 2:
+            raise RuntimeError(f'Could not figure out extraction of {v}')
+        v, args = v[0], v[1].split(',')
+    else:
+        args = []
+
     # Does it have .extract()?
     try:
-        example = ex.extract(v)
+        example = ex.extract(v, *args)
 
         def getter(o):
-            return o.extract(v)
+            return o.extract(v, *args)
 
         return getter, example
     except:
+        if 'extract' in dir(ex):
+            raise
         pass
 
     # Does it have __getitem__(T)?

@@ -49,12 +49,12 @@ def type_int(t: str):
     return {"casual": 1, "ranked": 2, "private": 3, "event": 4}[t.lower()]
 
 
-def _extract(t, k):
+def _extract(t, k, *args):
     if not k.startswith("_"):
         if hasattr(t, k):
             return getattr(t, k)
         if hasattr(t, "rql_" + k):
-            return getattr(t, "rql_" + k)()
+            return getattr(t, "rql_" + k)(*args)
     return ExtractFailure
 
 
@@ -302,6 +302,12 @@ class QueryMatch:
                     s.elo_after = p["score"] + p["change"]
                 s.change = p["change"]
 
+    def rql_split_time(self, split: str, uuid: str):
+        l = [t for t in self.timelines.all(split) if t.uuid == uuid]
+        if not l:
+            return None
+        return min(l, key=lambda t: t.time).time
+
     def rql_is_draw(self):
         return self.winner == "__draw"
 
@@ -329,10 +335,10 @@ class QueryMatch:
             raise RuntimeError(f'Cannot extract dynamic data... it has not been set.')
         return self.dynamic[key]
 
-    def extract(self, t: str):
-        ex = _extract(self, t)
+    def extract(self, t: str, *args):
+        ex = _extract(self, t, *args)
         if ex is ExtractFailure:
-            return self.members.extract(t) or self.timelines.extract(t)
+            return self.members.extract(t, *args) or self.timelines.extract(t, *args)
         return ex
 
     def get_member(self, uuid):
