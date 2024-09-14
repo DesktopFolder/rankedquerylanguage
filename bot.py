@@ -374,7 +374,7 @@ async def query(interaction: discord.Interaction, query: str):
 
     lints = [
         (
-            r"players\s*\|\s*filter\s*nick\([\w\s]*\)\s*\|\s*extract (nick )?average_completion\s*$",
+            r"^players\s*\|\s*filter\s*nick\([\w\s]*\)\s*\|\s*extract (nick )?average_completion\s*$",
             "*Note: /average\\_completion has been added to simplify this.*",
         ),
         (
@@ -384,7 +384,7 @@ async def query(interaction: discord.Interaction, query: str):
     ]
     notes = None
     for rxp, res in lints:
-        if re.match(rxp, query) is not None:
+        if re.search(rxp, query) is not None:
             notes = notes or list()
             notes.append(res)
     await run_discord_query(interaction, query, notes)
