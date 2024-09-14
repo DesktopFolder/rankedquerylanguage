@@ -18,6 +18,7 @@ _datasets_ = None
 __discord = False
 
 SUPPORTED_ITERABLES = set([list, dict, set, tuple, TimelineList])
+CURRENT_SEASON = None
 
 def first_not_none(l):
     for x in l:
@@ -438,6 +439,8 @@ def load_defaults(p: str, quiet=False, set_discord=False, no_mq=False):
             "__uuids": Dataset("UUIDs", uuids, root=True),
             "__users": Dataset("Users", users, root=True),
         }
+        global CURRENT_SEASON
+        CURRENT_SEASON = l[-1].season
 
     if not no_mq:
         # first, pull new matches from rmq

@@ -278,6 +278,22 @@ async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.C
 
 @client.tree.command()
 @app_commands.describe(
+    elo_min="Minimum elo to scan for. Default: 1500. Minimum: 1000.",
+    recent_count="Number of matches you want to scan for activity. Default: 100. Max: 100000.",
+)
+async def qb_top_activity(interaction: discord.Interaction, elo_min: int = 1500, recent_count: int = 100):
+    elo_min = max(elo_min, 1000)
+    recent_count = min(recent_count, 100000)
+    from klunk.dataset import CURRENT_SEASON as cs
+
+    load_query = f'take last {recent_count} | players | drop elo None() | drop elo lt({elo_min}) | extract uuid | assign highplayers'
+    find_query = f' | index s{cs} | take last {recent_count} | keepifattrcontained uuid highplayers | rsort date | extract date pretty'
+
+    await run_discord_query(interaction, load_query + find_query)
+
+
+@client.tree.command()
+@app_commands.describe(
     player1="The player you want to get the winrate / stats for.",
     player2="The player you want to get stats against.",
     season="Optional. Default to latest season.",
@@ -360,6 +376,10 @@ async def query(interaction: discord.Interaction, query: str):
         (
             r"players\s*\|\s*filter\s*nick\([\w\s]*\)\s*\|\s*extract (nick )?average_completion\s*$",
             "*Note: /average\\_completion has been added to simplify this.*",
+        ),
+        (
+            r"keepifattrcontained uuid highplayers",
+            "*Note: /qb_top_activity has been added to simplify this.*",
         )
     ]
     notes = None

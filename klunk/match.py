@@ -344,7 +344,7 @@ class QueryMatch:
     def get_member(self, uuid):
         # Note to self - this does UUID comparisons properly.
         # If this is crashing, you're probably checking corrupted matches.
-        for m in self.members:
+        for m in self.members: # UUIDList
             if m.uuid == uuid:
                 return m
         raise ValueError(f"Could not find uuid {uuid} in match ID {self.id}")
@@ -398,6 +398,12 @@ class QueryMatch:
         except Exception as e:
             raise RuntimeError(self.members) from e
         return f"Match #{self.id}: {memberstr} ({time_fmt(self.duration)})"
+
+    def rql_pretty(self):
+        if self.is_decay:
+            return "Match #{self.id}: {self.members[0].user} decayed"
+        win = self.get_member(self.winner).user if not self.rql_is_draw() else "Drawn Match"
+        return f"{self} Winner: {win}"
 
     def __contains__(self, key):
         try:
