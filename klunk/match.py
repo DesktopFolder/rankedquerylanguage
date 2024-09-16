@@ -401,7 +401,7 @@ class QueryMatch:
 
     def rql_pretty(self):
         if self.is_decay:
-            return "Match #{self.id}: {self.members[0].user} decayed"
+            return f"Match #{self.id}: {self.members[0].user} decayed"
         win = self.get_member(self.winner).user if not self.rql_is_draw() else "Drawn Match"
         return f"{self} Winner: {win}"
 
