@@ -287,7 +287,7 @@ async def qb_top_activity(interaction: discord.Interaction, elo_min: int = 1500,
     from klunk.dataset import CURRENT_SEASON as cs
 
     load_query = f'take last {recent_count} | players | drop elo None() | drop elo lt({elo_min}) | extract uuid | assign highplayers'
-    find_query = f' | index s{cs} | take last {recent_count} | keepifattrcontained uuid highplayers | rsort date | extract date pretty'
+    find_query = f' | index s{cs} | take last {recent_count} | filter nodecay | keepifattrcontained uuid highplayers | rsort date | extract date pretty'
 
     await run_discord_query(interaction, load_query + find_query)
 

@@ -216,6 +216,7 @@ class QueryMatch:
         "dynamic", # meta - store arbitrary data.
         "tag",
         "spectated",
+        "bastion",
     )
 
     @staticmethod
@@ -249,6 +250,10 @@ class QueryMatch:
         # Basic ones (mostly copied from JSON)
         self.id: int = m["match_id"]  # FILTER: Basic
         self.seed_type: str = m["seed_type"]  # FILTER: Basic
+        # NEW THINGS HAVE DIFFERENT NAMING CONVENENTIONS.
+        # OLD THINGS DON'T. THEY ARE MAPPED BY THE BOT.
+        # YIKES.
+        self.bastion: str = m.get("bastionType", None)
         self.type: int = m["match_type"]  # FILTER: Translation
         self.winner: UUID = UUID(m["winner"]) if m["winner"] is not None else (UUID("__draw") if not m["is_decay"] else UUID("__decay"))
         self.members = UUIDList([MatchMember(mem) for mem in m["members"]])

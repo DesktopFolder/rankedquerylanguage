@@ -779,6 +779,12 @@ class Runtime(Component):
             add_info("Example Object", inf, l.example())
             self.add_result(", ".join(inf))
 
+
+        @Local()
+        def localrequire(d: Dataset, attr: str):
+            e = SmartExtractor(d.example(), attr)
+            return d.clone([x for x in d.l if e(x) is not None])
+
         @Local()
         def localdrop_outliers(d: Dataset, attr: str, factor: str = "4", method="diff"):
             """
