@@ -531,6 +531,64 @@ class Runtime(Component):
             return d.l
 
         @Local()
+        def localround(d: Dataset, *attributes):
+            """
+            `round` - Rounds some data. Can only work on tuples.
+            """
+            ex = d.example()
+            if type(ex) != tuple:
+                raise RuntimeError('Sorry, data modification currently only works on tuples. Try extracting then doing raw [index].')
+            setters = [SmartReplacer(ex, attribute) for attribute in attributes]
+            getters = [SmartExtractor(ex, attribute) for attribute in attributes]
+            if type(d.l) in [list, set]:
+
+                def do_replacement(o):
+                    for s, g in zip(setters, getters):
+                        o = s(o, int(g(o)))
+                    return o
+
+                return [do_replacement(o) for o in d.l]
+            return d.l
+
+        @Local()
+        def localsubtract(d: Dataset, attr1, attr2):
+            """
+            `subtract(a, b)` - Essentially, (a - b) is added to the tuples passed in.
+            """
+            ex = d.example()
+            if type(ex) != tuple:
+                raise RuntimeError('Sorry, data modification currently only works on tuples. Try extracting then doing raw [index].')
+            first = SmartExtractor(ex, attr1)
+            second = SmartExtractor(ex, attr2)
+            if type(d.l) in [list, set]:
+
+                def do_replacement(o: tuple):
+                    return ((first(o) - second(o)), )
+
+                return [do_replacement(o) for o in d.l]
+            return d.l
+
+        @Local()
+        def localround(d: Dataset, *attributes):
+            """
+            `round` - Rounds some data. Can only work on tuples.
+            """
+            ex = d.example()
+            if type(ex) != tuple:
+                raise RuntimeError('Sorry, data modification currently only works on tuples. Try extracting then doing raw [index].')
+            setters = [SmartReplacer(ex, attribute) for attribute in attributes]
+            getters = [SmartExtractor(ex, attribute) for attribute in attributes]
+            if type(d.l) in [list, set]:
+
+                def do_replacement(o):
+                    for s, g in zip(setters, getters):
+                        o = s(o, abs(g(o)))
+                    return o
+
+                return [do_replacement(o) for o in d.l]
+            return d.l
+
+        @Local()
         def localrsort(l: Dataset, attribute):
             """
             `rsort(attribute)` - Reverse sorts the dataset based on `attribute`. To list attributes, `help attrs`
