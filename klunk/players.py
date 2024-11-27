@@ -1,6 +1,6 @@
 from typing import Callable
 from .extra_types import Milliseconds, UUID, Seconds
-from .utils import percentage_str, time_fmt
+from .utils import average, percentage_str, time_fmt
 from . import match
 
 
@@ -137,6 +137,9 @@ class Player:
         if self.match_completions == 0:
             return -1
         return self.time_completions / self.match_completions
+
+    def rql_average_elo(self):
+        return average([eloval for eloval in self.history.values() if eloval is not None])
 
     def rql_average_completion(self):
         if self.match_completions == 0:
