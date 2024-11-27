@@ -563,7 +563,7 @@ class Runtime(Component):
             if type(d.l) in [list, set]:
 
                 def do_replacement(o: tuple):
-                    return ((first(o) - second(o)), )
+                    return o + ((first(o) - second(o)), )
 
                 return [do_replacement(o) for o in d.l]
             return d.l
