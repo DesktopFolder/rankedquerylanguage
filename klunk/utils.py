@@ -25,7 +25,7 @@ def median(l):
         return -1
     if sz % 2 == 0:
         # even number. e.g. 4. we want [1, 2] in that case.
-        half = sz / 2
+        half = sz // 2
         return average([l[half-1], l[half]])
     return l[sz // 2]
         
