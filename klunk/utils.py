@@ -23,6 +23,7 @@ def median(l):
     sz = len(l)
     if sz == 0:
         return -1
+    l = sorted(l)
     if sz % 2 == 0:
         # even number. e.g. 4. we want [1, 2] in that case.
         half = sz // 2
