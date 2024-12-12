@@ -26,7 +26,7 @@ def median(l):
     if sz % 2 == 0:
         # even number. e.g. 4. we want [1, 2] in that case.
         half = sz / 2
-        return average([l[half-1, half]])
+        return average([l[half-1], l[half]])
     return l[sz // 2]
         
 def short_time_fmt(x: int | float, is_s=False):
