@@ -664,17 +664,17 @@ class Runtime(Component):
             """
             data = l.l
             if not data:
-                return self.add_result(f"Dataset was empty; no average calculable.")
+                return self.add_result(f"Dataset was empty; no median calculable.")
             extractor = SmartExtractor(data[0], val)
             example = extractor(data[0])
             if not is_numeric(type(example)):
-                return self.add_result(f"Could not average type {type(example)}.")
+                return self.add_result(f"Could not get median of type {type(example)}.")
             result = median([extractor(x) for x in data])
             if "time" in args or type(example) in [Milliseconds, Seconds]:
                 tf = time_fmt(result, type(example) is Seconds or "seconds" in args)
-                self.add_result(f"Average {val}: {tf}")
+                self.add_result(f"Median {val}: {tf}")
             else:
-                self.add_result(f"Average {val}: " + str((result if "precise" in args else round(result, 2))))
+                self.add_result(f"Median {val}: " + str((result if "precise" in args else round(result, 2))))
 
         @Local(print_dataset=False)
         def localsum(l: Dataset, val: str):
