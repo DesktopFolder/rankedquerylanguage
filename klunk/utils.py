@@ -19,7 +19,16 @@ def average(l):
         return -1  # lol
     return sum(l) / len(l)
 
-
+def median(l):
+    sz = len(l)
+    if sz == 0:
+        return -1
+    if sz % 2 == 0:
+        # even number. e.g. 4. we want [1, 2] in that case.
+        half = sz / 2
+        return average([l[half-1, half]])
+    return l[sz // 2]
+        
 def short_time_fmt(x: int | float, is_s=False):
     if x == -1:
         return "Invalid Time"

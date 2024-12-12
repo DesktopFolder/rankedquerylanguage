@@ -9,7 +9,7 @@ from typing import Callable, Any
 from . import commands, jobs, splits
 from .players import MatchPlayer, PlayerManager
 from .parse import parse_boolean
-from .utils import average, time_fmt, Percentage
+from .utils import average, median, time_fmt, Percentage
 from .strings import HELP, CHANGELOG, EXAMPLES
 
 # Later - this would be nice :)
@@ -650,6 +650,26 @@ class Runtime(Component):
             if not is_numeric(type(example)):
                 return self.add_result(f"Could not average type {type(example)}.")
             result = average([extractor(x) for x in data])
+            if "time" in args or type(example) in [Milliseconds, Seconds]:
+                tf = time_fmt(result, type(example) is Seconds or "seconds" in args)
+                self.add_result(f"Average {val}: {tf}")
+            else:
+                self.add_result(f"Average {val}: " + str((result if "precise" in args else round(result, 2))))
+
+        @Local(print_dataset=False)
+        def localmedian(l: Dataset, val, *args):
+            """
+            `median(attribute)` - Compute the median value of an attribute across a dataset.
+            Example: `filter completion | sort duration | take 1000 | average duration` gets the median time of the top 1000 completions.
+            """
+            data = l.l
+            if not data:
+                return self.add_result(f"Dataset was empty; no average calculable.")
+            extractor = SmartExtractor(data[0], val)
+            example = extractor(data[0])
+            if not is_numeric(type(example)):
+                return self.add_result(f"Could not average type {type(example)}.")
+            result = median([extractor(x) for x in data])
             if "time" in args or type(example) in [Milliseconds, Seconds]:
                 tf = time_fmt(result, type(example) is Seconds or "seconds" in args)
                 self.add_result(f"Average {val}: {tf}")
