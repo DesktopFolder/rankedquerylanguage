@@ -487,6 +487,9 @@ class Runtime(Component):
             if com is None:
                 self.add_result(f'{self.format(arg, "tick")} is not a valid command.')
                 return
+            if com.help is None:
+                self.add_result(f'Sorry, {self.format(arg, "tick")} does not have a help string yet.')
+                return
             self.add_result(self.format(com.help, "doc"))
 
         @Local()
