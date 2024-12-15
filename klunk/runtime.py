@@ -1124,19 +1124,19 @@ class Runtime(Component):
             self.time(eid)
             try:
                 exe = try_execute(e)
+                res = exe(dataset)
+                # TODO - rolling 'latest dataset metainfo' here for games
+                if res is None:
+                    pass
+                elif type(res) in SUPPORTED_ITERABLES:
+                    dataset = dataset.clone(res)
+                else:
+                    if not type(res) == Dataset:
+                        raise RuntimeError(f"Got unhandled result type {type(res)} in {e}")
+                    dataset = res
+                self.log_time(eid)
             except Exception as err:
                 raise RuntimeError(f'While executing `{e.command} {" ".join(e.arguments)}`, encountered error of type {type(e)}: {err}') from err
-            res = exe(dataset)
-            # TODO - rolling 'latest dataset metainfo' here for games
-            if res is None:
-                pass
-            elif type(res) in SUPPORTED_ITERABLES:
-                dataset = dataset.clone(res)
-            else:
-                if not type(res) == Dataset:
-                    raise RuntimeError(f"Got unhandled result type {type(res)} in {e}")
-                dataset = res
-            self.log_time(eid)
 
             if not pipeline:
                 # Determine if this is terminal.
