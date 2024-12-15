@@ -1122,7 +1122,10 @@ class Runtime(Component):
             e = pipeline.pop(0)
             eid = f"Expression@c:{e.loc}"
             self.time(eid)
-            exe = try_execute(e)
+            try:
+                exe = try_execute(e)
+            except Exception as err:
+                raise RuntimeError(f'While executing `{e.command} {" ".join(e.arguments)}`, encountered error of type {type(e)}: {err}') from err
             res = exe(dataset)
             # TODO - rolling 'latest dataset metainfo' here for games
             if res is None:
