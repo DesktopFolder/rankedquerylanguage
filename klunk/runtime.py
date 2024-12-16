@@ -451,12 +451,21 @@ class Runtime(Component):
             pass
 
         @Local()
-        def localplayers(l: Dataset):
+        def localplayers(l: Dataset, *args):
             """
             `players` - Converts the dataset from a match dataset to a player dataset.
-            This changes the datatype that commands operate over.
+            This changes the datatype that commands operate over. Some autofilters may be applied:
+            - lowff: Filters out players with high forfeit rates (> 10%)
+            - manygames: Filters out players with low matches played (< 100)
             """
-            return l.clone(list(PlayerManager(l.l, no_unranked=not l.has_unranked).players.values()))
+            res = l.clone(list(PlayerManager(l.l, no_unranked=not l.has_unranked).players.values()))
+            for arg in list(*args):
+                a = arg.lower()
+                if a == 'lowff':
+                    res = res.clone([p for p in res.l if not p.rql_is_highff()])
+                elif a == 'manygames':
+                    res = res.clone([p for p in res.l if p.summed(p.played_per) >= 100])
+            return res
 
         @Local(print_dataset=False)
         def localexamples(_):
