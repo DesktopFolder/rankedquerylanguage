@@ -2,7 +2,6 @@ import discord
 from discord import app_commands
 from io import BytesIO
 from klunk import sandbox
-from klunk.dataset import CURRENT_SEASON
 from klunk.language import ParseError
 from klunk.match import NON_ABNORMAL_PLAYERS
 
@@ -254,7 +253,8 @@ def apply_season(season: int | None, query_str: str):
     player="The player you want to get the leaderboard position of (otherwise gets top 10)",
 )
 async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.Choice[str], season: int | None = None, player: str | None = None, seed_type: app_commands.Choice[str] | None = None):
-    sz = CURRENT_SEASON if season is None else season
+    from klunk.dataset import CURRENT_SEASON as cs
+    sz = cs if season is None else season
     seastr = f'index s{sz} | '
     if seed_type is None:
         ststr = ""
