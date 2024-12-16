@@ -1136,7 +1136,7 @@ class Runtime(Component):
                     dataset = res
                 self.log_time(eid)
             except Exception as err:
-                raise RuntimeError(f'While executing `{e.command} {" ".join(e.arguments)}`, encountered error of type {type(e)}: {err}') from err
+                raise RuntimeError(f'While executing `{e.command} {" ".join(e.arguments)}`, encountered error of type {type(err)}: {err}') from err
 
             if not pipeline:
                 # Determine if this is terminal.
