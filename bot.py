@@ -254,7 +254,7 @@ def apply_season(season: int | None, query_str: str):
     player="The player you want to get the leaderboard position of (otherwise gets top 10)",
 )
 async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.Choice[str], season: int | None = None, player: str | None = None, seed_type: app_commands.Choice[str] | None = None):
-    sz = CURRENT_SEASON if season is not None else season
+    sz = CURRENT_SEASON if season is None else season
     seastr = f'index s{sz} | '
     if seed_type is None:
         ststr = ""
