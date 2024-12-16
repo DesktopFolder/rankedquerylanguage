@@ -459,12 +459,14 @@ class Runtime(Component):
             - manygames: Filters out players with low matches played (< 100)
             """
             res = l.clone(list(PlayerManager(l.l, no_unranked=not l.has_unranked).players.values()))
-            for arg in list(*args):
+            for arg in args:
                 a = arg.lower()
                 if a == 'lowff':
                     res = res.clone([p for p in res.l if not p.rql_is_highff()])
                 elif a == 'manygames':
                     res = res.clone([p for p in res.l if p.summed(p.played_per) >= 100])
+                else:
+                    raise RuntimeError(f'Invalid argument: {a} (see `help players`)')
             return res
 
         @Local(print_dataset=False)
