@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 from io import BytesIO
 from klunk import sandbox
+from klunk.dataset import CURRENT_SEASON
 from klunk.language import ParseError
 from klunk.match import NON_ABNORMAL_PLAYERS
 
@@ -235,6 +236,8 @@ def apply_season(season: int | None, query_str: str):
         app_commands.Choice(name="Fastest Completions", value="pb"),
         app_commands.Choice(name="Elo", value="elo"),
         app_commands.Choice(name="Average Completion", value="average_completion"),
+        app_commands.Choice(name="Average Stronghold Entry", value="average_stronghold"),
+        app_commands.Choice(name="Average End Entry", value="average_end"),
     ],
     seed_type=[
         app_commands.Choice(name="None", value=""),
@@ -251,6 +254,8 @@ def apply_season(season: int | None, query_str: str):
     player="The player you want to get the leaderboard position of (otherwise gets top 10)",
 )
 async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.Choice[str], season: int | None = None, player: str | None = None, seed_type: app_commands.Choice[str] | None = None):
+    sz = CURRENT_SEASON if season is not None else season
+    seastr = f'index s{sz} | '
     if seed_type is None:
         ststr = ""
     else:
@@ -262,7 +267,12 @@ async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.C
         "elo@player": f"{ststr}players | drop elo None() | rsort elo | enumerate | filter uuid({player}) | extract rql_dynamic uuid elo",
         "average_completion": f"{ststr}players | drop average_completion None() | sort average_completion | take 10 | extract nick average_completion match_completions",
         "average_completion@player": f"{ststr}players | drop average_completion None() | sort average_completion | enumerate | filter uuid({player}) | extract rql_dynamic nick average_completion match_completions",
+        "average_stronghold": f"{ststr}players lowff manygames | extract uuid | assign VP | {seastr}keepifattrcontained uuid VP | extract timelines | segmentby uuid | splits.get_if story.follow_ender_eye | keepifattrcontained uuid VP | averageby time uuid | sort 1 | take 10",
+        "average_stronghold@player!!": f"{ststr}players lowff manygames | extract uuid | assign VP | {seastr}keepifattrcontained uuid VP | extract timelines | segmentby uuid | splits.get_if story.follow_ender_eye | keepifattrcontained uuid VP | averageby time uuid | sort 1 | enumerate | filter 0({player})",
+        "average_end": f"{ststr}players lowff manygames | extract uuid | assign VP | {seastr}keepifattrcontained uuid VP | extract timelines | segmentby uuid | splits.get_if story.enter_the_end | keepifattrcontained uuid VP | averageby time uuid | sort 1 | take 10",
+        "average_end@player!!": f"{ststr}players lowff manygames | extract uuid | assign VP | {seastr}keepifattrcontained uuid VP | extract timelines | segmentby uuid | splits.get_if story.enter_the_end | keepifattrcontained uuid VP | averageby time uuid | sort 1 | enumerate | filter 0({player})",
     }
+    # !! -> these require enumerate to support tuples (not currently possible)
     v = value.value
     if v not in leaderboard_queries:
         await interaction.response.send_message(f"Your value of {v} is not a valid choice.")
