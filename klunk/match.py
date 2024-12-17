@@ -3,11 +3,12 @@ from typing import Any, Callable
 from .parse import parse_boolean
 from .extra_types import *
 
-ABNORMAL_MATCH_MS = 7 * 60 * 1000
+ABNORMAL_MATCH_MS = 6 * 60 * 1000
+IMPOSSIBLE_MATCH_MS = 4 * 60 * 1000
 
 # Just this season's top few completions' players.
 NON_ABNORMAL_PLAYERS = {
-        'lowk3y_', 'dandannyboy', '7rowl', 'v_strid', 'NoFearr1337', 'Oxidiot', 'Waluyoshi'
+        'lowk3y_', 'dandannyboy', '7rowl', 'v_strid', 'NoFearr1337', 'Oxidiot', 'Waluyoshi',
 }
 
 def is_abnormal(m) -> bool:
@@ -24,6 +25,10 @@ def is_abnormal(m) -> bool:
 
     # If the winner is NOT a valid member, then this is glitched.
     if m.winner not in [x.uuid for x in m.members]:
+        return True
+
+    # If the duration is WAY TOO SHORT, *always* exit out.
+    if m.duration <= IMPOSSIBLE_MATCH_MS:
         return True
 
     # If the duration is TOO SHORT, exit out. 
