@@ -58,6 +58,7 @@ class Player:
         self.ff_wins = match_int_dict()
         self.wins = match_int_dict()
         self.losses = match_int_dict()
+        self.draws = match_int_dict()
 
         # Ranked-only Stats (for now)
         self.match_completions = 0
@@ -77,6 +78,7 @@ class Player:
         self.ff_wins = self.indexed(self.ff_wins, 2)
         self.ff_losses = self.indexed(self.ff_losses, 2)
         self.played_per = self.indexed(self.played_per, 2)
+        self.draws = self.indexed(self.draws, 2)
 
     def __str__(self):
         return f"{self.nick} ({self.elo} elo)"
@@ -221,10 +223,12 @@ class PlayerManager:
                             p.time_completions += m.duration
                             p.pb = min(p.pb, m.duration) if p.pb is not None else m.duration
                         p.wins[m.type] += 1
-                    else:
+                    elif not m.rql_is_draw():
                         if m.is_ff:
                             p.ff_losses[m.type] += 1
                         p.losses[m.type] += 1
+                    else:
+                        p.draws[m.type] += 1
                 else:
                     p.decayed += 1
 
