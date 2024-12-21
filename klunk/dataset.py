@@ -115,7 +115,7 @@ class PikaConnection:
 
         assert _datasets_ is not None
         if res[0].season != res[-1].season or res[0].season != _datasets_["default"].l[0].season:
-            raise RuntimeError(f"The current season has changed. Please reboot the bot :)")
+            raise RuntimeError(f"The current season has changed. Please tell DesktopFolder to reboot the bot :)")
 
         # assume default is unchanged.
         res = sorted(res, key=lambda m: m.id)
