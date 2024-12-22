@@ -348,7 +348,7 @@ class QueryMatch:
     def extract(self, t: str, *args):
         ex = _extract(self, t, *args)
         if ex is ExtractFailure:
-            return self.members.extract(t, *args) or self.timelines.extract(t, *args)
+            return self.members.extract(t, *args) or self.timelines.extract(t, *args) or ExtractFailure
         return ex
 
     def get_member(self, uuid):
