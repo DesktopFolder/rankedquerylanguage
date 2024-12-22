@@ -17,6 +17,8 @@ from .strings import HELP, CHANGELOG, EXAMPLES
 
 
 def BasicExtractor(ex, v):
+    from .match import ExtractFailure as mef
+    from .players import ExtractFailure as pef
     # Creates and returns a smart extractor for ex
 
     # v can be a list of arguments to a function.
@@ -31,6 +33,8 @@ def BasicExtractor(ex, v):
     # Does it have .extract()?
     try:
         example = ex.extract(v, *args)
+        if example == mef or example == pef:
+            raise RuntimeError(f'Cannot extract attribute {v} from type {type(ex)}. Try `| attrs` to see available attributes at any point in a command.')
 
         def getter(o):
             return o.extract(v, *args)
