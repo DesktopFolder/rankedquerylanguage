@@ -178,7 +178,7 @@ class Player:
     def rql_tournament_fmt(self) -> str:
         s = (f"{self.nick} ({self.elo} final elo):" +
             f" {time_fmt(self.avg_completion())} average completion. (PB: {time_fmt(self.pb or 0)})" +
-             f" Winrate: {percentage_str(self.indexed(self.wins,2), self.indexed(self.played_per,2))} (Draws: {self.indexed(self.draws,2)})")
+             f" Winrate: {self.rql_winrate()} (Draws: {self.indexed(self.draws,2)})")
         return s
 
 
