@@ -178,19 +178,46 @@ class Player:
     def rql_tournament_fmt(self) -> str:
         s = (f"{self.nick} ({self.elo} final elo):" +
             f" {time_fmt(self.avg_completion())} average completion. (PB: {time_fmt(self.pb or 0)})" +
-            f" Winrate: {percentage_str(self.indexed(self.wins,2), self.indexed(self.played_per,2))}")
+             f" Winrate: {percentage_str(self.indexed(self.wins,2), self.indexed(self.played_per,2))} (Draws: {self.indexed(self.draws,2)})")
         return s
 
 
 class PlayerManager:
-    def __init__(self, l: list[match.QueryMatch], inject=set(), no_unranked=False):
+    def __init__(self, l: list[match.QueryMatch], inject=set(), no_unranked=False, args: list[tuple[str, int]] = list()):
         self.players: dict[str, Player] = {}
         self.games_added = 0
         self.ranked_added = 0
 
+        opponent_above = None
+
+        for arg in args:
+            a, v = arg
+            if a == 'opponent_above':
+                opponent_above = v
+            else:
+                raise RuntimeError(f'players got unknown argument: {a}({v})')
+
         for m in l:
+            if len(m.members) == 2:
+                is_1v1 = True
+                rev = list(reversed(m.members))
+                rev_itr = iter(rev)
+            else:
+                is_1v1 = False
+                rev = []
+                rev_itr = iter(rev)
+
             for member in m.members:
                 assert type(member) == match.MatchMember
+
+                if is_1v1 and opponent_above is not None:
+                    other_player = next(rev_itr)
+                    assert type(other_player) == match.MatchMember
+                    assert other_player.uuid != member.uuid
+                    assert other_player.elo is not None
+                    if other_player.elo < opponent_above:
+                        continue
+
                 uuid = member.uuid
                 assert uuid is not None
                 if uuid not in self.players:

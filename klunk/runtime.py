@@ -15,6 +15,12 @@ from .strings import HELP, CHANGELOG, EXAMPLES
 # Later - this would be nice :)
 # from .language import Compiler, Tokenizer
 
+def is_extract_failure(val):
+    if isinstance(val, type):
+        from .match import ExtractFailure as mef
+        from .players import ExtractFailure as pef
+        return val == mef or val == pef
+    return False
 
 def BasicExtractor(ex, v):
     from .match import ExtractFailure as mef
@@ -33,7 +39,7 @@ def BasicExtractor(ex, v):
     # Does it have .extract()?
     try:
         example = ex.extract(v, *args)
-        if example == mef or example == pef:
+        if is_extract_failure(example):
             raise RuntimeError(f'Cannot extract attribute {v} from type {type(ex)}. Try `| attrs` to see available attributes at any point in a command.')
 
         def getter(o):
@@ -459,18 +465,37 @@ class Runtime(Component):
             """
             `players` - Converts the dataset from a match dataset to a player dataset.
             This changes the datatype that commands operate over. Some autofilters may be applied:
-            - lowff: Filters out players with high forfeit rates (> 10%)
-            - manygames: Filters out players with low matches played (< 100)
+            - lowff(n): Filters out players with high forfeit rates (> 10% by default)
+            - manygames(n): Filters out players with low matches played (< 100 by default)
+            - opponent_above(n) : Adds win % against a certain elo or above
             """
-            res = l.clone(list(PlayerManager(l.l, no_unranked=not l.has_unranked).players.values()))
+            lowff = None
+            manygames = None
+
+            misc = list()
             for arg in args:
+                if type(arg) == tuple:
+                    arg, n = arg
+                    n = int(n)
+                else:
+                    n = None
                 a = arg.lower()
                 if a == 'lowff':
-                    res = res.clone([p for p in res.l if not p.rql_is_highff()])
+                    lowff = n or 10
                 elif a == 'manygames':
-                    res = res.clone([p for p in res.l if p.summed(p.played_per) >= 100])
+                    manygames = n or 100
+                elif a == 'opponent_above':
+                    misc.append((a, n or 2000))
                 else:
                     raise RuntimeError(f'Invalid argument: {a} (see `help players`)')
+
+            res = l.clone(list(PlayerManager(l.l, no_unranked=not l.has_unranked, args=misc).players.values()))
+            
+            if lowff is not None:
+                res = res.clone([p for p in res.l if not p.rql_is_highff(lowff)])
+            elif manygames:
+                res = res.clone([p for p in res.l if p.summed(p.played_per) >= manygames])
+
             return res
 
         @Local(print_dataset=False)
