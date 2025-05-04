@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from .parse import parse_boolean
 from .extra_types import *
@@ -252,9 +252,14 @@ class QueryMatch:
         return func(self.extract(a))
 
     def __init__(self, m):
+        # Important early things
+
+        # This is mapped by the fetcher. Actual key: "decayed"
+        self.is_decay = m["is_decay"]
+
         # Basic ones (mostly copied from JSON)
         self.id: int = m["match_id"]  # FILTER: Basic
-        self.seed_type: str = m["seed_type"]  # FILTER: Basic
+        self.seed_type: Optional[str] = None if self.is_decay else m["seed_type"]  # FILTER: Basic
         # NEW THINGS HAVE DIFFERENT NAMING CONVENENTIONS.
         # OLD THINGS DON'T. THEY ARE MAPPED BY THE BOT.
         # YIKES.
@@ -266,7 +271,6 @@ class QueryMatch:
         self.is_ff = m["forfeit"]
         self.season = m["match_season"]
         self.date: Seconds = Seconds(m["match_date"])
-        self.is_decay = m["is_decay"]
         self.category: str = m.get("category", "UNKNOWN")
         assert self.is_decay is not None
         # TIMELINE LIST IS SORTED BY DEFAULT. THIS IS A GOOD THING.
