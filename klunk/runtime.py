@@ -86,6 +86,18 @@ def SmartExtractor(ex, v, *args):
 
     return extractor
 
+def NonNullApplicator(extractor, func, iterable):
+    for x in iterable:
+        val = extractor(x)
+        if val is not None:
+            yield func(val)
+
+def NonNullKeeper(extractor, func, iterable):
+    for x in iterable:
+        val = extractor(x)
+        if val is not None and (func is None or func(val)):
+            yield val
+
 def AutoExtractor(d: Dataset, attribute: str, *args, no_none=True, allowed=None) -> tuple[Callable, type]:
     """
     Generates a Callable C(o) which returns o->attribute.
@@ -376,7 +388,10 @@ class Runtime(Component):
                 # Quick fix for now.
                 return [o for o in d.l if any([inner in s for inner in e(o)])]
 
-            return [x for x in d.l if e(x) in s]
+            res = [x for x in d.l if e(x) in s]
+            if not res:
+                self.add_result(f"Warning: During keepifattrcontained({attr}, {str}), the resulting dataset was empty.")
+            return res
 
         @Local(print_dataset=False)
         def localmetainfo(_):
@@ -685,16 +700,14 @@ class Runtime(Component):
             `average(attribute)` - Compute the average value of an attribute across a dataset.
             Example: `filter completion | sort duration | take 1000 | average duration` gets the average time of the top 1000 completions.
             """
-            data = l.l
-            if not data:
+            if not l.l:
                 return self.add_result(f"Dataset was empty; no average calculable.")
-            extractor = SmartExtractor(data[0], val)
-            example = extractor(data[0])
-            if not is_numeric(type(example)):
-                return self.add_result(f"Could not average type {type(example)}.")
-            result = average([extractor(x) for x in data])
-            if "time" in args or type(example) in [Milliseconds, Seconds]:
-                tf = time_fmt(result, type(example) is Seconds or "seconds" in args)
+            extractor, t = AutoExtractor(l, val)
+            if not is_numeric(t):
+                return self.add_result(f"Could not average type {t}.")
+            result = average([x for x in NonNullKeeper(extractor, None, l.l)])
+            if "time" in args or t in [Milliseconds, Seconds]:
+                tf = time_fmt(result, t is Seconds or "seconds" in args)
                 self.add_result(f"Average {val}: {tf}")
             else:
                 self.add_result(f"Average {val}: " + str((result if "precise" in args else round(result, 2))))
@@ -705,16 +718,14 @@ class Runtime(Component):
             `median(attribute)` - Compute the median value of an attribute across a dataset.
             Example: `filter completion | sort duration | take 1000 | average duration` gets the median time of the top 1000 completions.
             """
-            data = l.l
-            if not data:
+            if not l.l:
                 return self.add_result(f"Dataset was empty; no median calculable.")
-            extractor = SmartExtractor(data[0], val)
-            example = extractor(data[0])
-            if not is_numeric(type(example)):
-                return self.add_result(f"Could not get median of type {type(example)}.")
-            result = median([extractor(x) for x in data])
-            if "time" in args or type(example) in [Milliseconds, Seconds]:
-                tf = time_fmt(result, type(example) is Seconds or "seconds" in args)
+            extractor, t = AutoExtractor(l, val)
+            if not is_numeric(t):
+                return self.add_result(f"Could not get median of type {t}.")
+            result = median([x for x in NonNullKeeper(extractor, None, l.l)])
+            if "time" in args or t in [Milliseconds, Seconds]:
+                tf = time_fmt(result, t is Seconds or "seconds" in args)
                 self.add_result(f"Median {val}: {tf}")
             else:
                 self.add_result(f"Median {val}: " + str((result if "precise" in args else round(result, 2))))
@@ -732,16 +743,14 @@ class Runtime(Component):
             Example: `filter completion | sort duration | take 1000 | averageby duration winner` gets the average time of the top 1000 completions by their winner.
             """
             ex = l.example()
-            value_extractor = SmartExtractor(ex, to_average)
-            key_extractor = SmartExtractor(ex, by)
-
-            t = type(value_extractor(ex))
+            value_extractor, vt = AutoExtractor(l, to_average)
+            key_extractor, kt = AutoExtractor(l, by)
 
             avg_dict = defaultdict(lambda: list())
 
             for o in l.l:
                 avg_dict[key_extractor(o)].append(value_extractor(o))
-            return [tuple([k, t(average(v))]) for k, v in avg_dict.items()]
+            return [tuple([k, vt(average(v))]) for k, v in avg_dict.items()]
 
         @Local(print_dataset=False)
         def localcount(l: Dataset):
@@ -799,6 +808,7 @@ class Runtime(Component):
             return l.clone(newlist)
             
         def localop(d: Dataset, attribute, by=None, f=max):
+            # wtf does this do?
             if by is None:
                 # THIS IS SO COOL.
                 t = TypedExtractor(d, attribute, allowed=[Milliseconds, Seconds, float, int])
@@ -846,7 +856,7 @@ class Runtime(Component):
             def is_between(v):
                 return v >= l and v <= u
 
-            return [x for x in d.l if is_between(float(extractor(x)))]
+            return [x for x in NonNullKeeper(extractor, lambda val: is_between(float(val)), d.l)]
 
         def getslots(e: Any):
             if hasattr(e, "__slots__"):
