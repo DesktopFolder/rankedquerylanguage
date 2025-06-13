@@ -92,7 +92,7 @@ def NonNullApplicator(extractor, func, iterable):
         if val is not None:
             yield func(val)
 
-def NonNullKeeper(extractor, func, iterable):
+def NonNullExtractor(extractor, func, iterable):
     for x in iterable:
         val = extractor(x)
         if val is not None and (func is None or func(val)):
@@ -705,7 +705,7 @@ class Runtime(Component):
             extractor, t = AutoExtractor(l, val)
             if not is_numeric(t):
                 return self.add_result(f"Could not average type {t}.")
-            result = average([x for x in NonNullKeeper(extractor, None, l.l)])
+            result = average([x for x in NonNullExtractor(extractor, None, l.l)])
             if "time" in args or t in [Milliseconds, Seconds]:
                 tf = time_fmt(result, t is Seconds or "seconds" in args)
                 self.add_result(f"Average {val}: {tf}")
@@ -723,7 +723,7 @@ class Runtime(Component):
             extractor, t = AutoExtractor(l, val)
             if not is_numeric(t):
                 return self.add_result(f"Could not get median of type {t}.")
-            result = median([x for x in NonNullKeeper(extractor, None, l.l)])
+            result = median([x for x in NonNullExtractor(extractor, None, l.l)])
             if "time" in args or t in [Milliseconds, Seconds]:
                 tf = time_fmt(result, t is Seconds or "seconds" in args)
                 self.add_result(f"Median {val}: {tf}")
@@ -854,9 +854,12 @@ class Runtime(Component):
             extractor = SmartExtractor(d.example(), attribute)
 
             def is_between(v):
+                if v is None:
+                    return False
+                v = float(v)
                 return v >= l and v <= u
 
-            return [x for x in NonNullKeeper(extractor, lambda val: is_between(float(val)), d.l)]
+            return [x for x in d.l if is_between(extractor(x))]
 
         def getslots(e: Any):
             if hasattr(e, "__slots__"):
