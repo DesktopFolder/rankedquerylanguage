@@ -421,7 +421,7 @@ class Runtime(Component):
                 return localfilter(localindex(None, "most"), ("season", name.lstrip("s")))
             if name == "all":
                 self.add_result(
-                    f"*Warning: Dataset `all` contains* ***all*** *matches, including decay matches, unranked matches, and cheated matches. `index most` only contains legitimate, ranked, non-decay matches.* **No datasets contain very old matches due to RAM limitations. See `index all | extract season | count_uniques`.**"
+                    f"*Warning: Dataset `all` contains* ***all*** *matches, including decay matches, unranked matches, and cheated matches. `index most` only contains legitimate, ranked, non-decay matches.* **No datasets contain moderately old matches due to RAM limitations. See `index all | extract season | count_uniques`.**"
                 )
             if not name in self.datasets:
                 raise RuntimeError(f"{name} is not a valid dataset name.")
