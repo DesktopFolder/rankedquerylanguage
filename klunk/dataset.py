@@ -143,7 +143,7 @@ def get_skip_rule(groups):
     if len(groups) < 20:
         return lambda _: False
     def skip_rule(data):
-        ignore_seasons = [(0, []), (1, PLAYOFFS_SEASON_1), (2, PLAYOFFS_SEASON_2), (3, PLAYOFFS_SEASON_3), (4, [])]
+        ignore_seasons = [(0, []), (1, PLAYOFFS_SEASON_1), (2, PLAYOFFS_SEASON_2), (3, PLAYOFFS_SEASON_3), (4, []), (5, [])]
         for s, passthrough in ignore_seasons:
             if data.season == s:
                 if data.id in passthrough:
