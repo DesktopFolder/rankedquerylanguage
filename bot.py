@@ -157,7 +157,7 @@ def get_warns(uid: int):
     global WARNS_ETC
     if uid not in WARNS_ETC:
         WARNS_ETC.add(uid)
-        return '\n*Notice: Due to RAM and processing limitations, seasons up to & including 4 have been removed from this bot. A rewrite to allow querying all seasons is planned but there is no ETA.*\n'
+        return '\n*All seasons have been removed except for the current season due to extreme memory issues. Modifications to use a SQL backend and support all seasons again are in progress, no ETA. Sorry!*\n'
         # return '\n**Important note:** Ranked matches from seasons 0, 1, 2, and 3 are NO LONGER available in the discord bot dataset. (Excepting playoff matches, which are still loaded.) I still have this data and will start loading it again if/when I rewrite the bot to not consume 15gb of data...\n**Other updates:** The "category" key/value pair is now available in match data.\n'
     return ''
 
