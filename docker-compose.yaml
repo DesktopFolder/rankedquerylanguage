@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:17.5
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+    volumes:
+      - ./pg-db:/var/lib/postgresql/data 
+    ports:
+      - 7134:5432
+ 
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 7133:8080

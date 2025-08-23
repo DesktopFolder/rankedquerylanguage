@@ -5,3 +5,6 @@ __pycache__/
 # Token and general configuration
 token.txt
 location.txt
+
+# PG Data
+pg-db

@@ -17,6 +17,15 @@ PLAYOFFS = PLAYOFFS_SEASON_1 + PLAYOFFS_SEASON_2 + PLAYOFFS_SEASON_3
 _datasets_ = None
 __discord = False
 
+__database = None
+def use_sql():
+    global __database
+    if __database is not None:
+        raise RuntimeError(f"Could not select database with ID pg: is already set to {__database}!")
+    __database = "pg"
+def is_sql():
+    return __database == "pg"
+
 SUPPORTED_ITERABLES = set([list, dict, set, tuple, TimelineList])
 CURRENT_SEASON = None
 
@@ -420,6 +429,10 @@ def load_defaults(p: str, quiet=False, set_discord=False, no_mq=False):
     if set_discord:
         __discord = True
     global _datasets_
+    if p.startswith("pg:"):
+        from .pg import ingestor
+        ingestor.load_raw_matches(p.split(':', maxsplit=1)[1])
+        return
     if _datasets_ is None:
         if not no_mq:
             print("Starting RabbitMQ consumer.")

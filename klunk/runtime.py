@@ -217,11 +217,15 @@ def SmartReplacer(ex, a):
 
 
 class Runtime(Component):
-    def __init__(self, datasets: dict[str, Dataset], commands: dict[str, Callable], formatter=None):
+    def __init__(self, datasets: dict[str, Dataset] | None, commands: dict[str, Callable], formatter=None):
         super().__init__("Runtime")
-
-        self.datasets = datasets
-        self.user_dataset = UUIDDataset(self.datasets["__users"], self.datasets["__uuids"])
+        
+        if datasets is None:
+            from .pg import pg_dataset
+            self.datasets = pg_dataset.AutoDatasets()
+        else:
+            self.datasets = datasets
+            self.user_dataset = UUIDDataset(self.datasets["__users"], self.datasets["__uuids"])
         self.commands = commands
         self.formatter = formatter
         self.notes = list()

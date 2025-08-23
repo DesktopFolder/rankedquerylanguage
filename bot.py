@@ -4,6 +4,7 @@ from io import BytesIO
 from klunk import sandbox
 from klunk.language import ParseError
 from klunk.match import NON_ABNORMAL_PLAYERS
+from klunk.dataset import use_sql
 
 ONE_TIME = True
 
@@ -425,6 +426,10 @@ def run_cli():
 
 
 def main(args):
+    if "--pg" in args:
+        print("Selecting postgreSQL data provider.")
+        use_sql()
+
     if "--preload" in args:
         print("Preloading all loadable data into engine.")
         sandbox.Query("+debug timing tb | testlog 'Preloaded data.'").run()

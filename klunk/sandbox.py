@@ -1,6 +1,6 @@
 from .language import *
 from .runtime import Runtime
-from .dataset import load_defaults
+from .dataset import load_defaults, is_sql
 
 
 class Query(Component):
@@ -24,6 +24,10 @@ class Query(Component):
     def get_datasets(self, debug=True, set_discord=False):
         from os.path import isfile
 
+        prefix = ""
+        if is_sql():
+            self.log("Using postgres as backer for all data queries.")
+            prefix = "pg:"
         if isfile("location.txt"):
             loc = open("location.txt").read().strip()
             self.log(f"Using location.txt to load matches from {loc}")
@@ -32,7 +36,7 @@ class Query(Component):
             loc = "klunk/samples/"
 
         # Now construct the runtime, for which we need to load samples, etc.
-        datasets = load_defaults(loc, quiet=not debug, set_discord=set_discord, no_mq=self.no_mq)
+        datasets = load_defaults(prefix + loc, quiet=not debug, set_discord=set_discord, no_mq=self.no_mq)
         return datasets
 
     def run(self):
