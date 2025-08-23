@@ -4,6 +4,7 @@ from .match import MatchMember, QueryMatch, Timeline, TimelineList, from_json_st
 from .filters import *
 from typing import Any
 from .players import Player
+from klunk.dyn import dynamic_query, finish_query
 
 # From Sichi! :) Thanks
 PLAYOFFS_SEASON_1 = [371960, 372000, 372046, 372084, 372180, 372221, 372262, 372339, 372371, 372402, 372462, 372497, 372529, 372595, 372634, 372672, 372737, 372796, 372840, 372912, 372961, 388232, 388265, 388302, 388361, 388401, 388443, 388480, 388513, 388574, 388590, 388616, 388639, 388701, 388725, 388749, 388774, 388801, 390660, 390690, 390710, 390804, 390829, 390863, 390887, 390923, 391015, 391060, 391103, 391138, 391210, 391246, 391274, 391317, 391348, 391376, 391403]
@@ -180,6 +181,7 @@ def load_raw_matches(dirname, quiet=False) -> list[QueryMatch]:
                 if stripped != "{}":
                     try:
                         data = from_json_string(stripped)
+                        dynamic_query(data)
                         if skip_rule(data):
                             continue
                         res.append(data)
@@ -188,6 +190,7 @@ def load_raw_matches(dirname, quiet=False) -> list[QueryMatch]:
                         raise RuntimeError(f'Bad JSON document: "{stripped}"') from e
                 else:
                     ignored += 1
+    finish_query()
     if not quiet:
         print(f"Loaded {len(res)} matches. Ignored {ignored} bad matches.")
     if not all(res[i]["match_id"] < res[i + 1]["match_id"] for i in range(0, len(res) - 1)):
