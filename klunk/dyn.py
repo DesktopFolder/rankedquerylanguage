@@ -61,13 +61,17 @@ finishes = {
 todos = [f for q, f in queries.items() if q not in __dyn]
 finishes = [f for q, f in finishes.items() if q not in __dyn]
 
+cmpt = 0
 
 def dynamic_query(m: QueryMatch):
+    global cmpt
+    cmpt += 1
     for x in todos:
         x(m)
 
 def finish_query():
     global __dyn
+    print("Finishing all queries, ran over", cmpt, "matches")
     for x in finishes:
         x()
     with open("dyn.json", "w") as file:
