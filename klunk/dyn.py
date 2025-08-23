@@ -23,10 +23,13 @@ class PlayerRanking:
 
 # Seedtype streaks
 __sts = {"__global": PlayerRanking()}
+stsnum = 0
 def seedtype_streaks(m: QueryMatch):
     global __sts
+    global stsnum
     if not m.is_realranked() or m.seed_type is None:
         return
+    stsnum += 1
     for p in m.members:
         if p.uuid not in __sts:
             __sts[p.uuid] = PlayerRanking()
@@ -36,6 +39,7 @@ def seedtype_streaks(m: QueryMatch):
 
 def seedtype_streaks_finish():
     print("Attempting to finish seed types query...")
+    print("Ran over", stsnum, "matches")
 
     fin = {
 
@@ -59,7 +63,7 @@ finishes = {
     "sts": seedtype_streaks_finish,
 }
 todos = [f for q, f in queries.items() if q not in __dyn]
-finishes = [f for q, f in finishes.items() if q not in __dyn]
+finishes = [(q, f) for q, f in finishes.items() if q not in __dyn]
 
 cmpt = 0
 
@@ -72,7 +76,8 @@ def dynamic_query(m: QueryMatch):
 def finish_query():
     global __dyn
     print("Finishing all queries, ran over", cmpt, "matches")
-    for x in finishes:
-        x()
+    for name, f in finishes:
+        __dyn[name] = f()
+        print(json.dumps(__dyn[name], indent=2))
     with open("dyn.json", "w") as file:
         json.dump(__dyn, file)

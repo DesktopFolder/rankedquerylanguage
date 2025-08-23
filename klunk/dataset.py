@@ -161,6 +161,7 @@ def load_raw_matches(dirname, quiet=False) -> list[QueryMatch]:
     Now only loads [s4, s5...]
     i.e. we are now ignoring s3 or previous matches, EXCEPT playoffs games.
     """
+    import time
     assert not dirname or dirname.endswith("/")
 
     # [100000-120000.txt, ...]
@@ -172,6 +173,9 @@ def load_raw_matches(dirname, quiet=False) -> list[QueryMatch]:
 
     # Debug - number of matches we ignore (= {})
     ignored = 0
+
+    print("----- Starting load_raw_matches -----")
+    now = time.time()
 
     for g in groups:
         with open(f"{dirname}{g}") as file:
@@ -191,6 +195,8 @@ def load_raw_matches(dirname, quiet=False) -> list[QueryMatch]:
                 else:
                     ignored += 1
     finish_query()
+    print("----- Finished load_raw_matches -----")
+    print("Loading matches took", time.time() - now, "seconds.")
     if not quiet:
         print(f"Loaded {len(res)} matches. Ignored {ignored} bad matches.")
     if not all(res[i]["match_id"] < res[i + 1]["match_id"] for i in range(0, len(res) - 1)):
