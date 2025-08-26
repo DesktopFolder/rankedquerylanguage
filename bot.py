@@ -241,15 +241,23 @@ async def qb_quicklook(interaction: discord.Interaction, player: str, season: in
     s = f"index s{season}"
     p = f"filter uuid({player})"
     tls = f"| {s} | {p} | to_timelines"
+    def bast(name):
+        return f"| label \"For bastion {name}:\" | {s} | {p} bastion({name}) | players | {p} | extract tournament_fmt | quicksave "
 
     query = (
-            f"{s} | {p} | players | {p} | extract tournament_fmt | quicksave " +
+            f"+asfile | {s} | {p} | players | {p} | extract tournament_fmt | quicksave " +
             f"{tls} | splits.get_if projectelo.timeline.reset | {p} | count Resets | average time " +
             f"{tls} | splits.get_if projectelo.timeline.death | {p} | count Deaths | average time " +
             f"{tls} | splits.get_if projectelo.timeline.death_spawnpoint | {p} | count DeathResets | average time " +
+            f"{tls} | splits.get_if nether.root | {p} | count Nethers | average time " +
+            f"{tls} | splits.get_if nether.find_fortress | {p} | count Bastions | average time " +
+            f"{tls} | splits.get_if nether.find_bastion | {p} | count Fortresses | average time " +
             f"{tls} | splits.get_if story.follow_ender_eye | {p} | count Strongholds | average time " +
-            f"{tls} | splits.get_if story.enter_the_end | {p} | count Ends | average time "
-            f"{tls} | splits.get_if projectelo.timeline.forfeit | {p} | count Forfeits | average time "
+            f"{tls} | splits.get_if story.enter_the_end | {p} | count Ends | average time " +
+            bast("TREASURE") +
+            bast("STABLES") +
+            bast("BRIDGE") +
+            bast("HOUSING")
     )
 
     await run_discord_query(interaction, query)

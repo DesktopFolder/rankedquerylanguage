@@ -981,6 +981,12 @@ class Runtime(Component):
 
 
         @Local()
+        def locallabel(d: Dataset, *args):
+            self.add_result(" ".join([str(x) for x in args]))
+            return d
+
+
+        @Local()
         def localdrop(d: Dataset, attribute, value):
             """
             `drop(attribute, value)` - Drops any records where attribute is equal to value.
