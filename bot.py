@@ -162,7 +162,7 @@ def get_warns(uid: int):
     return ''
 
 
-async def run_discord_query(interaction: discord.Interaction, query: str, notes=None):
+async def run_discord_query(interaction: discord.Interaction, query: str, notes=None, no_query=False):
     print("Running Discord query:", query)
     await interaction.response.defer(ephemeral=False, thinking=True)
     resp = ENGINE.run(query, False, False, True)
@@ -170,6 +170,7 @@ async def run_discord_query(interaction: discord.Interaction, query: str, notes=
     warns = get_warns(interaction.user.id)
     notes = f"{warns}" if notes is None else "{warns}\nNote: ".join(notes)
     literal = "" if "literal" not in resp else f"\n{resp['literal']}"
+    qpfx = f"From query: `{query}`: " if not no_query else ""
     try:
         if "file" in resp:
             # Attempt string conversion. LOL this might be a bad idea.
@@ -181,17 +182,17 @@ async def run_discord_query(interaction: discord.Interaction, query: str, notes=
                 s += dataset.format_str(l)
                 s += "\n"
                 if len(s) > one_gb:
-                    await interaction.followup.send(f"From query: `{query}`: Failed to upload, too large (>2gb){notes}{literal}")
+                    await interaction.followup.send(f"{qpfx}Failed to upload, too large (>2gb){notes}{literal}")
                     return
             s = s.encode("utf-8")
-            await interaction.followup.send(f"From query: `{query}`{notes}{literal}", file=discord.File(BytesIO(s), "result.txt"))
+            await interaction.followup.send(f"{qpfx}{notes}{literal}", file=discord.File(BytesIO(s), "result.txt"))
         else:
             if len(literal) > 2000:
                 await interaction.followup.send(
                     f"Your query has a result size of {len(literal)} characters, which is too long. Try with +asfile| at the start."
                 )
             else:
-                await interaction.followup.send(f"From query: `{query}`:{notes}{literal}")
+                await interaction.followup.send(f"{qpfx}{notes}{literal}")
     except Exception as e:
         print(f"Failed to send response to /query - likely it took too long: {e}.")
         await interaction.followup.send(f"Your query failed. This is usually because you generated something that Discord's API rejected. Try generating a smaller result set.")
@@ -245,7 +246,7 @@ async def qb_quicklook(interaction: discord.Interaction, player: str, season: in
         return f"| label \"For bastion {name}:\" | {s} | {p} bastion({name}) | players | {p} | extract tournament_fmt | quicksave "
 
     query = (
-            f"+asfile | {s} | {p} | players | {p} | extract tournament_fmt | quicksave " +
+            f"{s} | {p} | players | {p} | extract tournament_fmt | quicksave " +
             f"{tls} | splits.get_if projectelo.timeline.reset | {p} | count Resets | average time " +
             f"{tls} | splits.get_if projectelo.timeline.death | {p} | count Deaths | average time " +
             f"{tls} | splits.get_if projectelo.timeline.death_spawnpoint | {p} | count DeathResets | average time " +
@@ -260,7 +261,7 @@ async def qb_quicklook(interaction: discord.Interaction, player: str, season: in
             bast("HOUSING")
     )
 
-    await run_discord_query(interaction, query)
+    await run_discord_query(interaction, query, no_query=True)
 
 @client.tree.command(description="Various dynamic leaderboards with multiple options")
 @app_commands.choices(
