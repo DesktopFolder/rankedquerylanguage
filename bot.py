@@ -230,7 +230,28 @@ def apply_season(season: int | None, query_str: str):
     return query_str
 
 
-@client.tree.command()
+@client.tree.command(description="Get results for a player (defaults to previous season)")
+@app_commands.describe(
+    player="The player to get previous-season stats for.",
+    season="The season (default: previous)",
+)
+async def qb_quicklook(interaction: discord.Interaction, player: str, season: int | None = None):
+    from klunk.dataset import CURRENT_SEASON as cs
+    season = season if season is not None else cs - 1
+    s = f"index s{season}"
+    p = f"filter uuid({player})"
+    tls = f"| {s} | {p} | to_timelines | {p}"
+
+    query = (
+            f"{s} | {p} | players | {p} | extract tournament_fmt | quicksave " +
+            f"{tls} | splits.get_if projectelo.timeline.reset | count Resets | average time | quiskave " +
+            f"{tls} | splits.get_if story.follow_ender_eye | count Strongholds | average time | quicksave " +
+            f"{tls} | splits.get_if story.enter_the_end | count Ends | average time | quicksave "
+    )
+
+    await run_discord_query(interaction, query)
+
+@client.tree.command(description="Various dynamic leaderboards with multiple options")
 @app_commands.choices(
     value=[
         app_commands.Choice(name="Fastest Completions", value="pb"),

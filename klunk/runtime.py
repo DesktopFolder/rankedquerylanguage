@@ -4,7 +4,7 @@ from .match import QueryMatch
 from.parse_utils import partition_list
 from .component import Component
 from .expression import Expression
-from .dataset import SUPPORTED_ITERABLES, Dataset, UUIDDataset
+from .dataset import SUPPORTED_ITERABLES, Dataset, UUIDDataset, format_str
 from typing import Callable, Any
 from . import commands, jobs, splits
 from .players import MatchPlayer, PlayerManager
@@ -753,14 +753,15 @@ class Runtime(Component):
             return [tuple([k, vt(average(v))]) for k, v in avg_dict.items()]
 
         @Local(print_dataset=False)
-        def localcount(l: Dataset):
+        def localcount(l: Dataset, tag: str = ""):
             """
             `count` - Returns the current dataset size.
             """
+            tg = "" if not tag else f"({tag}) "
             if type(l.l) is list:
-                self.add_result(f"Current size: {len(l.l)}")
+                self.add_result(f"{tg}Current size: {len(l.l)}")
             else:
-                self.add_result(f"Dataset currently only has one item.")
+                self.add_result(f"{tg}Dataset currently only has one item.")
             return l
 
         @Local()
@@ -776,6 +777,11 @@ class Runtime(Component):
                 return [extractor(x) for x in l.l]
             extractors = [SmartExtractor(l.example(), a) for a in args]
             return [tuple(e(x) for e in extractors) for x in l.l]
+
+        @Local()
+        def localto_timelines(l: Dataset):
+            nl = l.clone(localextract(l, "timelines"))
+            return localsegmentby(nl, "uuid")
 
         @Local()
         def localsegmentby(l: Dataset, attribute: str):
@@ -913,6 +919,13 @@ class Runtime(Component):
             add_info("Example Object", inf, l.example())
             self.add_result(", ".join(inf))
 
+        @Local(print_dataset=False)
+        def localquicksave(l: Dataset):
+            x = l.l
+            if isinstance(x, list):
+                x = x[-1]
+            self.add_result(format_str(x))
+            return l
 
         @Local()
         def localrequire(d: Dataset, attr: str):
