@@ -240,13 +240,16 @@ async def qb_quicklook(interaction: discord.Interaction, player: str, season: in
     season = season if season is not None else cs - 1
     s = f"index s{season}"
     p = f"filter uuid({player})"
-    tls = f"| {s} | {p} | to_timelines | {p}"
+    tls = f"| {s} | {p} | to_timelines"
 
     query = (
             f"{s} | {p} | players | {p} | extract tournament_fmt | quicksave " +
-            f"{tls} | splits.get_if projectelo.timeline.reset | count Resets | average time | quiskave " +
-            f"{tls} | splits.get_if story.follow_ender_eye | count Strongholds | average time | quicksave " +
-            f"{tls} | splits.get_if story.enter_the_end | count Ends | average time | quicksave "
+            f"{tls} | splits.get_if projectelo.timeline.reset | {p} | count Resets | average time " +
+            f"{tls} | splits.get_if projectelo.timeline.death | {p} | count Deaths | average time " +
+            f"{tls} | splits.get_if projectelo.timeline.death_spawnpoint | {p} | count DeathResets | average time " +
+            f"{tls} | splits.get_if story.follow_ender_eye | {p} | count Strongholds | average time " +
+            f"{tls} | splits.get_if story.enter_the_end | {p} | count Ends | average time "
+            f"{tls} | splits.get_if projectelo.timeline.forfeit | {p} | count Forfeits | average time "
     )
 
     await run_discord_query(interaction, query)
@@ -308,7 +311,7 @@ async def qb_leaderboard(interaction: discord.Interaction, value: app_commands.C
     await run_discord_query(interaction, query)
 
 
-@client.tree.command()
+@client.tree.command(description="See how many games have been completed recently by high-elo players.")
 @app_commands.describe(
     elo_min="Minimum elo to scan for. Default: 1500. Minimum: 1000.",
     recent_count="Number of matches you want to scan for activity. Default: 100. Max: 100000.",
@@ -324,7 +327,7 @@ async def qb_top_activity(interaction: discord.Interaction, elo_min: int = 1500,
     await run_discord_query(interaction, load_query + find_query)
 
 
-@client.tree.command()
+@client.tree.command(description="See stats for a given player/player matchup.")
 @app_commands.describe(
     player1="The player you want to get the winrate / stats for.",
     player2="The player you want to get stats against.",
@@ -359,7 +362,7 @@ FAQ = {
     "learn": {
         "name": "Learning the Language",
         "question": "How do I learn how to use the query language?",
-        "answer": "That's the fun part - you don't! More seriously, the language is not particularly well documented. Your best bet is a mix of the following:\n- Reading the results of `/query help` and `/query help FN` for a variety of common functions;\n- Making sure you use `| attrs` to see what attributes are available on the type you're operating over;\n- Watching Sichi's tutorial video: <https://www.youtube.com/watch?v=jhZ8T2ZpOaI>\n- Trying out the prewritten queries, like `/average_completion` and `/qb_leaderboard`, and looking at the queries they use;\n- If you're having difficulties, feel free to ping me, I don't mind :)\n- (Best option if you know Python) Reading the runtime code at <https://github.com/DesktopFolder/rankedquerylanguage/blob/main/klunk/runtime.py> - search for `@Local` to find the source code of the majority of the runtime functions;"
+        "answer": "That's the fun part - you don't! More seriously, the language is not particularly well documented. Your best bet is a mix of the following:\n- Reading the results of `/query help` and `/query help FN` for a variety of common functions;\n- Making sure you use `| attrs` to see what attributes are available on the type you're operating over;\n- **Trying out the prewritten queries, like `/average_completion` and `/qb_leaderboard`, and looking at the queries they use;**\n- If you're having difficulties, feel free to ping me, I don't mind :)\n- (Best option if you know Python) Reading the runtime code at <https://github.com/DesktopFolder/rankedquerylanguage/blob/main/klunk/runtime.py> - search for `@Local` to find the source code of the majority of the runtime functions;"
     },
     "correctness": {
         "name": "Dataset Correctness",
@@ -376,7 +379,7 @@ FAQ = {
 FAQ_CHOICES = [app_commands.Choice(name=v["name"], value=k) for k, v in FAQ.items()]
 
 
-@client.tree.command()
+@client.tree.command(description="Some mediocre responses to RQL questions.")
 @app_commands.choices(choice=FAQ_CHOICES)
 @app_commands.describe(
     choice="The FAQ you want to access.",
@@ -391,7 +394,7 @@ async def qb_faq(interaction: discord.Interaction, choice: app_commands.Choice[s
     return await interaction.response.send_message(f"**FAQ: {que}**\n{ans}")
 
 
-@client.tree.command()
+@client.tree.command(description="Make a dynamic query using RQL (see /qb_faq).")
 @app_commands.describe(
     query="Your Ranked query string. See #docs for details.",
 )
