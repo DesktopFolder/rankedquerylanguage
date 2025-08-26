@@ -1146,9 +1146,10 @@ class Runtime(Component):
                     res = [m for m in res if filter_function(m)]
                     self.log(f"Applied filter {filt} and got {len(res)} resulting objects (from {preres}).")
                     if not res:
-                        raise RuntimeError(
-                            f"Empty dataset after applying filter: {filt}. This can indicate the wrong attribute is being filtered on, or that the value being searched for is wrong, or just that there are no results that match your query."
-                        )
+                        self.add_result(f"Note: The filter {filt} matched 0 results, which might indicate an error.")
+                        #raise RuntimeError(
+                        #    f"Empty dataset after applying filter: {filt}. This can indicate the wrong attribute is being filtered on, or that the value being searched for is wrong, or just that there are no results that match your query."
+                        #)
                         # return l.clone(f'Empty dataset after applying filter: {filt}')
                 else:
                     raise RuntimeError(f"Unsupported filter type {type(filt)} for filter {filt}")
@@ -1202,7 +1203,7 @@ class Runtime(Component):
                     dataset = res
                 self.log_time(eid)
             except Exception as err:
-                raise RuntimeError(f'While executing `{e.command} {" ".join(e.arguments)}`, encountered error of type {type(err)}: {err}') from err
+                raise RuntimeError(f'While executing `{e.command} {" ".join([str(x) for x in e.arguments])}`, encountered error of type {type(err)}: {err}') from err
 
             if not pipeline:
                 # Determine if this is terminal.
