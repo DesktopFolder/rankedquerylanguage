@@ -263,6 +263,34 @@ async def qb_quicklook(interaction: discord.Interaction, player: str, season: in
 
     await run_discord_query(interaction, query, no_query=True)
 
+
+@client.tree.command(description="Get split timing results for a player (defaults to previous season)")
+@app_commands.describe(
+    player="The player username or UUID",
+    season="The season (default: previous)",
+)
+async def qb_quicksplits(interaction: discord.Interaction, player: str, season: int | None = None):
+    from klunk.dataset import CURRENT_SEASON as cs
+    season = season if season is not None else cs - 1
+    s = f"index s{season}"
+    p = f"filter uuid({player})"
+    tls = f"| {s} | {p} | to_timelines"
+
+    def sdiff(first: str, second: str):
+        return f"{tls} | splits.diff {first} {second} | {p} | label \"For {first} -> {second}:\" | count SplitsCounted | average time"
+
+    query = (
+        sdiff("nether.root", "find_bastion") +
+        sdiff("find_bastion", "find_fortress") +
+        sdiff("find_fortress", "projectelo.timeline.blind_travel") +
+        sdiff("find_fortress", "story.follow_ender_eye") +
+        sdiff("story.follow_ender_eye", "end.root") +
+        sdiff("end.root", "projectelo.timeline.dragon_death")
+    )
+
+    await run_discord_query(interaction, query, no_query=True)
+
+
 @client.tree.command(description="Various dynamic leaderboards with multiple options")
 @app_commands.choices(
     value=[
