@@ -104,8 +104,8 @@ class Player:
     def completions(self, mode=2):
         return self.indexed(self.wins,mode) - self.indexed(self.ff_wins,mode)
 
-    def rql_is_highff(self):
-        return (self.summed(self.ff_losses) / self.summed(self.played_per)) > 0.10
+    def rql_is_highff(self, ratio=0.10):
+        return (self.summed(self.ff_losses) / self.summed(self.played_per)) > ratio
     def rql_forfeit_rate_num(self, mode=2):
         return round(100 * (self.indexed(self.ff_losses, mode) / self.indexed(self.played_per, mode)), 2)
     def rql_win_rate_num(self, mode=2):

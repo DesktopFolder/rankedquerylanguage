@@ -507,7 +507,7 @@ class Runtime(Component):
             res = l.clone(list(PlayerManager(l.l, no_unranked=not l.has_unranked, args=misc).players.values()))
             
             if lowff is not None:
-                res = res.clone([p for p in res.l if not p.rql_is_highff(lowff)])
+                res = res.clone([p for p in res.l if not p.rql_is_highff(1/lowff)])
             elif manygames:
                 res = res.clone([p for p in res.l if p.summed(p.played_per) >= manygames])
 
