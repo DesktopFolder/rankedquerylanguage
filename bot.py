@@ -251,8 +251,8 @@ async def qb_quicklook(interaction: discord.Interaction, player: str, season: in
             f"{tls} | splits.get_if projectelo.timeline.death | {p} | count Deaths | average time " +
             f"{tls} | splits.get_if projectelo.timeline.death_spawnpoint | {p} | count DeathResets | average time " +
             f"{tls} | splits.get_if nether.root | {p} | count Nethers | average time " +
-            f"{tls} | splits.get_if nether.find_fortress | {p} | count Bastions | average time " +
-            f"{tls} | splits.get_if nether.find_bastion | {p} | count Fortresses | average time " +
+            f"{tls} | splits.get_if nether.find_bastion | {p} | count Bastions | average time " +
+            f"{tls} | splits.get_if nether.find_fortress | {p} | count Fortresses | average time " +
             f"{tls} | splits.get_if story.follow_ender_eye | {p} | count Strongholds | average time " +
             f"{tls} | splits.get_if story.enter_the_end | {p} | count Ends | average time " +
             bast("TREASURE") +
