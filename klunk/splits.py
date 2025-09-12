@@ -1,4 +1,4 @@
-from klunk.match import Timeline
+from klunk.match import Timeline, QueryMatch
 from .dataset import Dataset
 from typing import Callable
 from .commands import Executor
@@ -116,3 +116,21 @@ def dump_ids(ds: Dataset):
     This is just for debugging. You probably don't need or want it.
     """
     return [[split.id for split in l] for l in ds.l]
+
+@Split
+def match_has_any(ds: Dataset, split_id: str):
+    l: list[QueryMatch] = ds.l
+    
+    def has_split(q: QueryMatch):
+        return q.timelines.earlist_time(split_id) is not None
+
+    return ds.clone([o for o in l if has_split(o)])
+
+@Split
+def match_has_none(ds: Dataset, split_id: str):
+    l: list[QueryMatch] = ds.l
+    
+    def has_split(q: QueryMatch):
+        return q.timelines.earlist_time(split_id) is not None
+
+    return ds.clone([o for o in l if not has_split(o)])

@@ -179,7 +179,7 @@ class TimelineList(list):
     def extract(self, key: str):
         return _lextract(self, key)
 
-    def earlist_time(self, tl_id) -> Milliseconds | None:
+    def earlist_time(self, tl_id: str) -> Milliseconds | None:
         if tl_id in self.lookup:
             return self.lookup[tl_id][0].time
         else:
