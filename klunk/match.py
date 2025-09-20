@@ -85,8 +85,8 @@ class MatchMember:
         self.change = None
         self.elo_after = None
 
-    def extract(self, attribute):
-        return _extract(self, attribute)
+    def extract(self, attribute, *args):
+        return _extract(self, attribute, *args)
 
     def __str__(self):
         return f"{self.user}"
@@ -386,6 +386,13 @@ class QueryMatch:
         if es:
             return min(es)
         return None
+
+    def rql_winner_split_count(self, arg):
+        return len([tl for tl in self.timelines.all(arg) if tl.uuid == self.winner])
+
+    def rql_loser_split_count(self, arg):
+        loser = self.get_other_member(self.winner)
+        return len([tl for tl in self.timelines.all(arg) if tl.uuid == loser])
 
     # def is_draw(self):
     #    return self.winner is None

@@ -86,6 +86,17 @@ def SmartExtractor(ex, v, *args):
 
     return extractor
 
+# V2 LOL
+def SmarterExtractor(ex, v: str | tuple[str, str]):
+    # Creates and returns a smart extractor for ex
+    attr_name: str = v if isinstance(v, str) else v[0]
+    extractor, example = BasicExtractor(ex, v)
+
+    if isinstance(example, Callable) and attr_name.startswith("rql_"):
+        return lambda o: extractor(o)()
+
+    return extractor
+
 def NonNullApplicator(extractor, func, iterable):
     for x in iterable:
         val = extractor(x)
@@ -772,10 +783,12 @@ class Runtime(Component):
             In programming terms, this turns [Match(winner=x,...), ...] into [x, ...]
             If more than one attribute is supplied, extracts all attributes into a tuple.
             """
+
+            # If there's only one thing
             if len(args) == 1:
-                extractor = SmartExtractor(l.example(), *args)
+                extractor = SmarterExtractor(l.example(), *args)
                 return [extractor(x) for x in l.l]
-            extractors = [SmartExtractor(l.example(), a) for a in args]
+            extractors = [SmarterExtractor(l.example(), a) for a in args]
             return [tuple(e(x) for e in extractors) for x in l.l]
 
         @Local()
